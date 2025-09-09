@@ -162,17 +162,18 @@ export class GoogleDriveOAuthManager {
     );
 
     try {
-      oauth2Client.setCredentials({ refresh_token: refreshToken });
-      const { credentials } = await oauth2Client.refreshAccessToken();
+      oauth2Client.setCredentials({
+        refresh_token: decryptToken(refreshToken)
+      });
 
-      console.log('✅ 토큰 갱신 성공');
+      const { credentials } = await oauth2Client.refreshAccessToken();
       
       return {
         accessToken: credentials.access_token || '',
         expiryDate: credentials.expiry_date ? new Date(credentials.expiry_date) : null
       };
     } catch (error) {
-      console.error('❌ 토큰 갱신 실패:', error);
+      console.error('Token refresh error:', error);
       throw new Error('토큰 갱신에 실패했습니다');
     }
   }
@@ -223,32 +224,6 @@ export class GoogleDriveOAuthManager {
     return account;
   }
 
-  /**
-   * 리프레시 토큰으로 액세스 토큰 갱신
-   */
-  async refreshAccessToken(refreshToken: string) {
-    const oauth2Client = new OAuth2Client(
-      this.clientId,
-      this.clientSecret,
-      this.redirectUri
-    );
-
-    try {
-      oauth2Client.setCredentials({
-        refresh_token: decryptToken(refreshToken)
-      });
-
-      const { credentials } = await oauth2Client.refreshAccessToken();
-      
-      return {
-        accessToken: credentials.access_token || '',
-        expiryDate: credentials.expiry_date ? new Date(credentials.expiry_date) : null
-      };
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      throw new Error('토큰 갱신에 실패했습니다');
-    }
-  }
 
   /**
    * 토큰 유효성 검사
