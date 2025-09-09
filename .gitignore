@@ -33,6 +33,13 @@ yarn-error.log*
 uploads/
 attached_assets/
 
+# Allow essential logo images for website
+!attached_assets/WATCHA_Logo_Main_1754543558673.png
+!attached_assets/Disney+_logo.svg_1754543152100.png
+!attached_assets/Netflix_Logo_RGB_1754544148734.png
+!attached_assets/enm_media_220220714_01_1754544392930.jpg
+!attached_assets/nsmtv_홈화면_1754540059522.png
+
 # Database files
 *.db
 *.sqlite
