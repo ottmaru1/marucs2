@@ -1,0 +1,117 @@
+# Dependencies
+node_modules/
+.npm
+.yarn
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Development
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Large upload files (exclude from repository)
+uploads/
+attached_assets/
+
+# Database files
+*.db
+*.sqlite
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+jspm_packages/
+bower_components/
+
+# ======================
+# BACKUP FILES - 절대 커밋 금지
+# ======================
+
+# 모든 백업 아카이브
+*.tar.gz
+*.tgz
+*.tar
+*.zip
+*.rar
+*.7z
+*.bz2
+*.gz
+
+# 백업 파일명 패턴
+*backup*
+*-backup*
+*_backup*
+backup-*
+backup_*
+*Backup*
+*BACKUP*
+
+# 프로젝트 백업 파일들
+MaruComSys-backup*
+marucs*backup*
+marucomsys*backup*
+
+# Git 백업
+*.bundle
+.git-backup/
+
+# 분할 백업 파일들
+*-part-*
+*_part_*
+*split*
+*chunk*
+
+# 임시 백업
+*.tmp
+*.temp
+*~
+.#*
+#*#
+
+# 압축 파일들 (프로젝트 관련)
+project*.zip
+project*.tar.gz
+archive*.zip
+archive*.tar.gz
+
+# 로그 백업
+*.log.backup
+*.log.old
+
+# 데이터베이스 백업
+*.sql.backup
+*.db.backup
+*.dump
