@@ -3,6 +3,9 @@
 마루컴시스(MaruComSys)는 숙박업소(호텔, 모텔, PC방)를 대상으로 통합 OTT(Over-The-Top) 스트리밍 솔루션을 제공하는 한국의 B2B 웹 애플리케이션입니다. The company provides three main services: OTT PLUS (set-top box solution), StreamPlayer (PC-based OTT integration), Netflix account management services, and NoHard System (diskless PC solutions for PC cafes). The website serves as a marketing and lead generation platform showcasing these services with features like cost calculators, success stories, inquiry forms, and a complete file management system for downloads.
 
 ## Recent Changes (Latest Update: January 18, 2025)
+- 🚀 **DEPLOYMENT READY: Replit 배포 준비 완료** - 모든 설정 최적화, 내일 배포 예정
+- ✅ **VERIFIED: 배포 설정 검토 완료** - Autoscale (1 vCPU/2GB RAM), 환경변수, 데이터베이스 설정 모두 완료
+- ✅ **TESTED: 대안 플랫폼 검증** - CloudFlare Pages (정적만), Vercel (TypeScript 오류), Replit만이 완전 지원
 - 🔄 **IN PROGRESS: 폴더 전체 동기화 시스템** - 서브폴더 파일 검색 로직 개선 중, 다음 세션에서 완료 예정
 - ✅ **COMPLETE: 폴더명 변경** - "MaruComSys Files" → "MaruCS-Sync"로 모든 코드에서 통일 (15:00)
 - ✅ **ENHANCED: 무결성 검증 시스템** - 파일 크기 + MD5 해시로 정확한 동기화 상태 비교
