@@ -44,7 +44,7 @@ export default function About() {
                   <div className="text-gray-600">년 이상 경험</div>
                 </div>
                 <div className="text-center bg-green-50 p-4 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600 mb-2">1,000+</div>
+                  <div className="text-3xl font-bold text-green-600 mb-2">1,500+</div>
                   <div className="text-gray-600">고객사</div>
                 </div>
                 <div className="text-center bg-purple-50 p-4 rounded-lg">
@@ -52,7 +52,7 @@ export default function About() {
                   <div className="text-gray-600">기술 지원</div>
                 </div>
                 <div className="text-center bg-orange-50 p-4 rounded-lg">
-                  <div className="text-3xl font-bold text-orange-600 mb-2">95%</div>
+                  <div className="text-3xl font-bold text-orange-600 mb-2">99.9%</div>
                   <div className="text-gray-600">고객 만족도</div>
                 </div>
               </div>
