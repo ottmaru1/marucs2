@@ -129,10 +129,10 @@ export default function Contact() {
                         name="companyName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>회사명 *</FormLabel>
+                            <FormLabel>상호 *</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="회사명을 입력하세요" 
+                                placeholder="상호를 입력하세요" 
                                 {...field} 
                                 data-testid="input-company-name"
                               />
