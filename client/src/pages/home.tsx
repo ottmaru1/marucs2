@@ -98,7 +98,6 @@ export default function Home() {
     { name: "Netflix", color: "bg-red-100 text-red-800" },
     { name: "Disney+", color: "bg-blue-100 text-blue-800" },
     { name: "TVING", color: "bg-purple-100 text-purple-800" },
-    { name: "Wavve", color: "bg-green-100 text-green-800" },
     { name: "YouTube", color: "bg-yellow-100 text-yellow-800" },
     { name: "+ 더보기", color: "bg-gray-100 text-gray-800" }
   ];
