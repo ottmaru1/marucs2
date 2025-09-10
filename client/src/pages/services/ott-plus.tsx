@@ -363,7 +363,7 @@ export default function OttPlus() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-white">
+      <section className="py-20 bg-blue-600 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold mb-6" data-testid="text-cta-title">
             지금 바로 OTT PLUS를 도입하세요
@@ -374,11 +374,11 @@ export default function OttPlus() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/contact">
-              <Button size="lg" className="bg-white text-primary hover:bg-gray-100" data-testid="button-contact-now">
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100" data-testid="button-contact-now">
                 지금 바로 문의하기
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="border-white text-white bg-white/10 hover:bg-white hover:text-primary" data-testid="button-demo-request">
+            <Button size="lg" variant="outline" className="border-white text-white bg-white/10 hover:bg-white hover:text-blue-600" data-testid="button-demo-request">
               데모 요청하기
             </Button>
           </div>
