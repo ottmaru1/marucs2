@@ -378,7 +378,7 @@ export default function OttPlus() {
                 지금 바로 문의하기
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary" data-testid="button-demo-request">
+            <Button size="lg" variant="outline" className="border-white text-white bg-white/10 hover:bg-white hover:text-primary" data-testid="button-demo-request">
               데모 요청하기
             </Button>
           </div>

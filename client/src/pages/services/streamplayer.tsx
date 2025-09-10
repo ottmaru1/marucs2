@@ -409,7 +409,7 @@ export default function StreamPlayer() {
               </Button>
             </Link>
             <Link href="/downloads">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-600" data-testid="button-download-now">
+              <Button size="lg" variant="outline" className="border-white text-white bg-white/10 hover:bg-white hover:text-green-600" data-testid="button-download-now">
                 프로그램 다운로드
               </Button>
             </Link>
