@@ -279,7 +279,7 @@ export default function Home() {
           {/* Trust Indicators */}
           <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { value: "500+", label: "도입 업체" },
+              { value: "1,500+", label: "도입 업체" },
               { value: "99.9%", label: "가동률" },
               { value: "5분", label: "평균 응답시간" },
               { value: "20년+", label: "운영 경험" }
