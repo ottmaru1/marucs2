@@ -408,7 +408,7 @@ export default function StreamPlayer() {
                 지금 바로 문의하기
               </Button>
             </Link>
-            <Link href="/downloads">
+            <Link href="/downloads" onClick={() => window.scrollTo(0, 0)}>
               <Button size="lg" variant="outline" className="border-white text-white bg-white/10 hover:bg-white hover:text-green-600" data-testid="button-download-now">
                 프로그램 다운로드
               </Button>
