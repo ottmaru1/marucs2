@@ -319,7 +319,7 @@ export default function SuccessStories() {
                 <div className="text-4xl mb-4">🏨</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">비즈니스 호텔</h3>
                 <p className="text-sm text-gray-600">도심 중심가 비즈니스 고객 대상 호텔</p>
-                <div className="mt-4 text-blue-600 font-semibold">450+ 고객사</div>
+                <div className="mt-4 text-blue-600 font-semibold">400+ 고객사</div>
               </CardContent>
             </Card>
 
@@ -337,7 +337,7 @@ export default function SuccessStories() {
                 <div className="text-4xl mb-4">🎮</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">PC방</h3>
                 <p className="text-sm text-gray-600">일반 PC방 및 프리미엄 게임 카페</p>
-                <div className="mt-4 text-blue-600 font-semibold">450+ 고객사</div>
+                <div className="mt-4 text-blue-600 font-semibold">400+ 고객사</div>
               </CardContent>
             </Card>
 
@@ -346,7 +346,7 @@ export default function SuccessStories() {
                 <div className="text-4xl mb-4">🏩</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">모텔 & 펜션</h3>
                 <p className="text-sm text-gray-600">소규모 숙박업소 및 독립 펜션</p>
-                <div className="mt-4 text-blue-600 font-semibold">450+ 고객사</div>
+                <div className="mt-4 text-blue-600 font-semibold">550+ 고객사</div>
               </CardContent>
             </Card>
           </div>
