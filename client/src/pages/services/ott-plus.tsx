@@ -368,7 +368,7 @@ export default function OttPlus() {
           <h2 className="text-4xl font-bold mb-6" data-testid="text-cta-title">
             지금 바로 OTT PLUS를 도입하세요
           </h2>
-          <p className="text-xl text-gray-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-white mb-8 max-w-2xl mx-auto">
             복잡한 OTT 관리는 이제 그만! 
             하나의 솔루션으로 모든 고민을 해결하세요.
           </p>
