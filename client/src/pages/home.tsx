@@ -833,7 +833,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center">
                   <Users className="text-primary text-xl mr-4" />
-                  <span className="text-gray-700">전국 1,000여 고객사 서비스 제공</span>
+                  <span className="text-gray-700">전국 1,500+ 고객사 서비스 제공</span>
                 </div>
                 <div className="flex items-center">
                   <PhoneCall className="text-primary text-xl mr-4" />

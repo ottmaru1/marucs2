@@ -144,7 +144,7 @@ export default function About() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">광범위한 고객층</h3>
                 <p className="text-gray-600 text-sm">
-                  전국 1,000여 고객사에 서비스를 제공하며 다양한 경험을 보유하고 있습니다.
+                  전국 1,500+ 고객사에 서비스를 제공하며 다양한 경험을 보유하고 있습니다.
                 </p>
               </CardContent>
             </Card>
@@ -210,7 +210,7 @@ export default function About() {
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">전국 서비스 확대</h3>
                 <p className="text-gray-600">
                   PC방 및 숙박업소 대상 서비스를 전국으로 확대하며, 
-                  고객사 1,000곳을 돌파했습니다.
+                  고객사 1,500곳을 돌파했습니다.
                 </p>
               </div>
             </div>
