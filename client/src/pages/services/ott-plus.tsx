@@ -373,7 +373,7 @@ export default function OttPlus() {
             하나의 솔루션으로 모든 고민을 해결하세요.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/contact">
+            <Link href="/contact" onClick={() => window.scrollTo(0, 0)}>
               <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100" data-testid="button-contact-now">
                 지금 바로 문의하기
               </Button>

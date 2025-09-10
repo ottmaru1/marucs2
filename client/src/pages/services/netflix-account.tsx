@@ -288,7 +288,7 @@ export default function NetflixAccount() {
             숙박업소 본연의 서비스에만 집중하세요!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/contact">
+            <Link href="/contact" onClick={() => window.scrollTo(0, 0)}>
               <Button size="lg" className="bg-white text-red-600 hover:bg-gray-100" data-testid="button-contact-now">
                 지금 바로 문의하기
               </Button>
