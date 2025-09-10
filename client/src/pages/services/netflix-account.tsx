@@ -293,9 +293,11 @@ export default function NetflixAccount() {
                 지금 바로 문의하기
               </Button>
             </Link>
-            <Button size="lg" className="bg-white text-red-600 hover:bg-gray-100 hover:text-red-700" data-testid="button-consultation">
-              무료 상담 받기
-            </Button>
+            <Link href="/contact" onClick={() => window.scrollTo(0, 0)}>
+              <Button size="lg" className="bg-white text-red-600 hover:bg-gray-100 hover:text-red-700" data-testid="button-consultation">
+                무료 상담 받기
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

@@ -348,9 +348,11 @@ export default function NoHardSystem() {
                 지금 바로 문의하기
               </Button>
             </Link>
-            <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 hover:text-purple-700" data-testid="button-demo-request">
-              시연 요청하기
-            </Button>
+            <Link href="/contact" onClick={() => window.scrollTo(0, 0)}>
+              <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 hover:text-purple-700" data-testid="button-demo-request">
+                시연 요청하기
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
