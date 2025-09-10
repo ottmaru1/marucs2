@@ -152,13 +152,13 @@ export default function SuccessStories() {
   const stats = [
     {
       icon: <Building className="h-8 w-8" />,
-      number: "1,000+",
+      number: "1,500+",
       label: "고객사",
       description: "전국 숙박업소 및 PC방"
     },
     {
       icon: <Users className="h-8 w-8" />,
-      number: "95%",
+      number: "99.9%",
       label: "고객 만족도",
       description: "서비스 도입 후 평균 만족도"
     },
