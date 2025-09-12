@@ -309,11 +309,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           console.log(`📁 ${folder.name} 폴더: ${subFolderContents.length}개 파일`);
         } catch (error) {
-          console.log(`⚠️ ${folder.name} 폴더 조회 실패: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.log(`⚠️ ${folder.name} 폴더 조회 실패: ${errorMessage}`);
           subFolderDetails.push({
             name: folder.name,
             id: folder.id,
-            error: error.message
+            error: errorMessage
           });
         }
       }
@@ -692,7 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileName,
         'application/octet-stream',
         fileStats.size,
-        backupFolder?.id
+        backupFolder?.id || undefined
       );
       
       console.log(`✅ 백업 파일 업로드 성공: ${fileName} → Google Drive`);
@@ -706,10 +707,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
-      console.error("백업 파일 업로드 오류:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error("백업 파일 업로드 오류:", errorMessage);
       res.status(500).json({ 
         error: "백업 파일 업로드 중 오류가 발생했습니다",
-        details: error.message 
+        details: errorMessage 
       });
     }
   });
@@ -847,23 +849,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // MaruCS-Sync 하위 파일들 찾기
       const marucsFiles = files.filter(f => 
-        f.parents && f.parents.includes(marucsFolder.id) &&
+        f.parents && marucsFolder.id && f.parents.includes(marucsFolder.id) &&
         f.mimeType !== 'application/vnd.google-apps.folder'
       );
       
       // 서브폴더들과 그 하위 파일들 찾기
       const subfolders = files.filter(f => 
         f.mimeType === 'application/vnd.google-apps.folder' &&
-        f.parents && f.parents.includes(marucsFolder.id)
+        f.parents && marucsFolder.id && f.parents.includes(marucsFolder.id)
       );
       
-      const subfolderFiles = {};
+      const subfolderFiles: Record<string, any[]> = {};
       for (const folder of subfolders) {
+        if (!folder.id || !folder.name) continue;
         const folderFiles = files.filter(f => 
           f.parents && f.parents.includes(folder.id!) &&
           f.mimeType !== 'application/vnd.google-apps.folder'
         );
-        subfolderFiles[folder.name!] = folderFiles.map(f => ({
+        subfolderFiles[folder.name] = folderFiles.map(f => ({
           name: f.name,
           size: f.size,
           id: f.id
@@ -883,7 +886,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
-      console.error('파일 목록 확인 오류:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('파일 목록 확인 오류:', errorMessage);
       res.status(500).json({ error: "파일 목록 확인에 실패했습니다" });
     }
   });
@@ -930,7 +934,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`❌ 토큰 불일치 감지: DB(${account.email}) vs 실제(${actualUserInfo.email})`);
         }
       } catch (error) {
-        console.log(`⚠️ 계정 검증 실패: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.log(`⚠️ 계정 검증 실패: ${errorMessage}`);
       }
 
       // 🔧 MaruCS-Sync 폴더 구조 확인 및 업로드
@@ -1069,11 +1074,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const filePerms = await googleDriveFileManager.getFilePermissions(account.accessToken!, driveFile.id);
             console.log(`🔐 파일 권한 상태:`, filePerms);
           } catch (permError) {
-            console.log(`⚠️ 권한 확인 실패:`, permError.message);
+            const permErrorMessage = permError instanceof Error ? permError.message : 'Unknown error';
+            console.log(`⚠️ 권한 확인 실패:`, permErrorMessage);
           }
           
         } catch (error) {
-          console.log(`⚠️ 폴더 내용 확인 실패:`, error.message);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.log(`⚠️ 폴더 내용 확인 실패:`, errorMessage);
         }
       }
 
