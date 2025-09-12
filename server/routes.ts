@@ -252,8 +252,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🔍 기본 계정 조사 시작: ${primaryAccount.email}`);
       
       // 모든 파일 조회
-      const googleDriveFileManager = new GoogleDriveFileManager();
-      const allFiles = await googleDriveFileManager.listFiles(primaryAccount.accessToken!, 200);
+      const googleDriveFileManagerInstance = new GoogleDriveFileManager();
+      const allFiles = await googleDriveFileManagerInstance.listFiles(primaryAccount.accessToken!, 200);
       console.log(`📂 전체 파일 수: ${allFiles.length}`);
       
       // MaruCS-Sync 폴더 찾기
@@ -273,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📁 MaruCS-Sync 폴더 발견: ${marucsSyncFolder.id}`);
       
       // MaruCS-Sync 폴더 내용 조회
-      const folderContents = await googleDriveFileManager.listFolderContents(
+      const folderContents = await googleDriveFileManagerInstance.listFolderContents(
         primaryAccount.accessToken!,
         marucsSyncFolder.id!
       );
@@ -528,27 +528,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`⬆️  Google Drive 업로드 시작: ${fileName}`);
       
-      // 스트림을 사용한 업로드
-      const uploadResult = await googleDriveFileManager.uploadFileFromBuffer(
+      // 파일 업로드
+      const uploadResult = await googleDriveFileManager.uploadFile(
         defaultAccount.accessToken!,
-        fileName,
         file.buffer,
+        fileName,
+        file.mimetype,
         backupFolder.id!
       );
 
-      if (uploadResult.success) {
-        console.log(`✅ 업로드 성공: ${fileName} -> ${uploadResult.webViewLink}`);
-        
-        res.json({
-          success: true,
-          fileName: fileName,
-          fileSize: fileSizeMB + 'MB',
-          driveLink: uploadResult.webViewLink,
-          message: `${fileName}이(가) 성공적으로 업로드되었습니다`
-        });
-      } else {
-        throw new Error(uploadResult.error || '업로드 실패');
-      }
+      // Google Drive API는 성공 시 파일 객체를 반환하고, 실패 시 예외를 던집니다
+      console.log(`✅ 업로드 성공: ${fileName} -> ${uploadResult.webViewLink}`);
+      
+      res.json({
+        success: true,
+        fileName: fileName,
+        fileSize: fileSizeMB + 'MB',
+        driveLink: uploadResult.webViewLink,
+        message: `${fileName}이(가) 성공적으로 업로드되었습니다`
+      });
 
     } catch (error) {
       console.error("웹 백업 파일 업로드 오류:", error);
@@ -1834,8 +1832,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: `계정을 찾을 수 없습니다: ${email}` });
       }
 
-      const googleDriveFileManager = new GoogleDriveFileManager();
-      const files = await googleDriveFileManager.listFiles(account.accessToken, 200);
+      const googleDriveFileManagerInstance = new GoogleDriveFileManager();
+      const files = await googleDriveFileManagerInstance.listFiles(account.accessToken, 200);
       
       // MaruCS-Sync 폴더 및 하위 구조 분석
       const marucsFolder = files.find(f => f.name === "MaruCS-Sync" && f.mimeType === 'application/vnd.google-apps.folder');
