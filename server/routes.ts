@@ -1839,8 +1839,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: email,
         totalFiles: files.length,
         marucsFolder: marucsFolder || null,
-        marucsSubfolders: [],
-        marucsFiles: [],
+        marucsSubfolders: [] as Array<{name: string | null | undefined, id: string | null | undefined}>,
+        marucsFiles: [] as Array<{name: string | null | undefined, size: string | null | undefined, id: string | null | undefined}>,
         rootFiles: files.filter(f => !f.parents || f.parents.length === 0).length
       };
 
@@ -1861,7 +1861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 각 서브폴더의 파일들도 확인
         for (const subfolder of report.marucsSubfolders) {
           const subfolderFiles = files.filter(f => 
-            f.parents && f.parents.includes(subfolder.id)
+            f.parents && subfolder.id && f.parents.includes(subfolder.id)
           );
           (subfolder as any).files = subfolderFiles.map(f => ({ 
             name: f.name, 
@@ -2262,7 +2262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`📂 ${targetAccount.email}에서 MaruCS-Sync 하위 폴더 ${marucsSubfolders.length}개 발견:`);
             for (const folder of marucsSubfolders) {
               console.log(`   📁 ${folder.name} (${folder.id})`);
-              if (subFolderNames.includes(folder.name)) {
+              if (folder.name && subFolderNames.includes(folder.name)) {
                 folderMap[folder.name] = folder.id;
               }
             }
