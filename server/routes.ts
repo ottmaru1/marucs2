@@ -1071,6 +1071,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // 파일 권한 정보 확인
           try {
+            if (!driveFile.id) throw new Error('File ID is null');
             const filePerms = await googleDriveFileManager.getFilePermissions(account.accessToken!, driveFile.id);
             console.log(`🔐 파일 권한 상태:`, filePerms);
           } catch (permError) {
@@ -1110,7 +1111,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.error(`❌ 백업 계정 토큰 불일치: DB(${backupAccount.email}) vs 실제(${actualUserInfo.email})`);
               }
             } catch (error) {
-              console.log(`⚠️ 백업 계정 검증 실패: ${error.message}`);
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              console.log(`⚠️ 백업 계정 검증 실패: ${errorMessage}`);
             }
             
             // 토큰 유효성 재확인
@@ -1154,12 +1156,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const backupFileName = req.file.originalname;
             console.log(`📤 ${backupAccount.email}: ${backupFileName} 업로드 시작 (${(req.file.size / 1024 / 1024).toFixed(2)}MB)`);
             
+            const parentFolderId = backupCategoryFolder?.id || backupMainFolder?.id;
+            if (!parentFolderId) throw new Error('No parent folder ID available');
+            
             const backupFile = await googleDriveFileManager.uploadFile(
               backupAccount.accessToken!,
               req.file.buffer,
               backupFileName,
               req.file.mimetype,
-              backupCategoryFolder?.id || backupMainFolder?.id
+              parentFolderId
             );
             
             if (backupFile?.id) {
@@ -1173,7 +1178,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`✅ 백업 완료: ${backupFileName} → ${backupAccount.email}`);
             
           } catch (error) {
-            console.error(`❌ 백업 실패 (${backupAccount.email}):`, error.message || error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`❌ 백업 실패 (${backupAccount.email}):`, errorMessage);
           }
         })
         ).catch(error => {
@@ -2309,8 +2315,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`🔍 ${targetAccount.email}에서 MaruCS-Sync 전체 파일 ${allMarucsFiles.length}개 검사 중...`);
                 const existingFile = allMarucsFiles.find(f => f.name === sourceFile.name);
                 if (existingFile) {
-                  const parentFolderName = existingFile.parents ? 
-                    targetFiles.find(pf => pf.id === existingFile.parents[0])?.name || 'unknown' : 'root';
+                  const parentFolderName = existingFile.parents && existingFile.parents.length > 0 ? 
+                    targetFiles.find(pf => pf.id === existingFile.parents![0])?.name || 'unknown' : 'root';
                   
                   // ⭐ 파일이 루트에 있으면 적절한 서브폴더로 이동
                   if (parentFolderName === 'MaruCS-Sync') {
@@ -2378,7 +2384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const categoryFolderName = getFolderNameByCategory(download.category);
                 console.log(`   - 매핑된 폴더명: ${categoryFolderName}`);
                 console.log(`   - 폴더맵 키들:`, Object.keys(folderMap));
-                console.log(`   - 폴더맵[${categoryFolderName}]: ${folderMap[categoryFolderName]}`);
+                console.log(`   - 폴더맵[${categoryFolderName || 'null'}]: ${categoryFolderName ? folderMap[categoryFolderName] : 'undefined'}`);
                 
                 if (categoryFolderName && folderMap[categoryFolderName]) {
                   targetFolderId = folderMap[categoryFolderName];
@@ -2391,6 +2397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`📤 업로드 시작: ${sourceFile.name} → ${targetFolderName} (${(fileBuffer.length / (1024 * 1024)).toFixed(2)}MB)`);
                 
                 // 타겟 계정의 카테고리 폴더에 직접 업로드 
+                if (!targetFolderId) throw new Error('Target folder ID is null');
                 const newFile = await googleDriveFileManager.uploadFile(
                     decryptedToken,
                     fileBuffer,
