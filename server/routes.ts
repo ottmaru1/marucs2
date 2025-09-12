@@ -110,16 +110,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
-  // Session middleware
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'marucomsys-admin-session',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false, // Set to true if using HTTPS
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
-  }));
+  // 세션 설정 - 서버리스 환경에서는 간소화된 방식 사용
+  if (!process.env.VERCEL) {
+    // Replit 환경: 일반적인 세션 사용
+    app.use(session({
+      secret: process.env.SESSION_SECRET || 'marucomsys-admin-session',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: false, // Set to true if using HTTPS
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      }
+    }));
+  } else {
+    // Vercel 서버리스: 기본 미들웨어만 사용 (상태 저장 X)
+    app.use((req, res, next) => {
+      // 서버리스 환경에서는 요청별 처리
+      (req as any).session = {};
+      next();
+    });
+  }
 
   // Admin authentication routes (must be before middleware)
   app.post("/api/admin/login", async (req, res) => {
@@ -2617,8 +2627,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     setInterval(refreshAllTokens, 30 * 60 * 1000);
   };
   
-  // 스케줄러 시작
-  startTokenRefreshScheduler();
+  // 스케줄러는 서버리스 환경에서는 비활성화 (setInterval 미지원)
+  if (!process.env.VERCEL) {
+    console.log('🕒 토큰 갱신 스케줄러 시작 (30분 간격)');
+    startTokenRefreshScheduler();
+  } else {
+    console.log('⏭️ 서버리스 환경: 토큰 갱신 스케줄러 비활성화 (온디맨드 방식 사용)');
+  }
 
   const httpServer = createServer(app);
   return httpServer;
