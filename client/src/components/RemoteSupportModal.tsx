@@ -171,7 +171,7 @@ export default function RemoteSupportModal({ open, onOpenChange }: RemoteSupport
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• 원격지원 프로그램을 다운로드하여 설치해주세요</li>
               <li>• 설치 후 고객지원팀에 연락하여 지원을 요청하세요</li>
-              <li>• 문의: 1588-0000 (평일 09:00-18:00)</li>
+              <li>• 문의: 070-8080-0953 (평일 10:30-17:00)</li>
             </ul>
           </div>
         </div>
