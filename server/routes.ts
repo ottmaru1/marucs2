@@ -252,8 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🔍 기본 계정 조사 시작: ${primaryAccount.email}`);
       
       // 모든 파일 조회
-      const googleDriveFileManagerInstance = new GoogleDriveFileManager();
-      const allFiles = await googleDriveFileManagerInstance.listFiles(primaryAccount.accessToken!, 200);
+      const allFiles = await googleDriveFileManager.listFiles(primaryAccount.accessToken!, 200);
       console.log(`📂 전체 파일 수: ${allFiles.length}`);
       
       // MaruCS-Sync 폴더 찾기
@@ -273,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📁 MaruCS-Sync 폴더 발견: ${marucsSyncFolder.id}`);
       
       // MaruCS-Sync 폴더 내용 조회
-      const folderContents = await googleDriveFileManagerInstance.listFolderContents(
+      const folderContents = await googleDriveFileManager.listFolderContents(
         primaryAccount.accessToken!,
         marucsSyncFolder.id!
       );
@@ -1832,8 +1831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: `계정을 찾을 수 없습니다: ${email}` });
       }
 
-      const googleDriveFileManagerInstance = new GoogleDriveFileManager();
-      const files = await googleDriveFileManagerInstance.listFiles(account.accessToken, 200);
+      const files = await googleDriveFileManager.listFiles(account.accessToken, 200);
       
       // MaruCS-Sync 폴더 및 하위 구조 분석
       const marucsFolder = files.find(f => f.name === "MaruCS-Sync" && f.mimeType === 'application/vnd.google-apps.folder');

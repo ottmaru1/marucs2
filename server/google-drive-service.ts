@@ -80,10 +80,15 @@ export class GoogleDriveOAuthManager {
   constructor() {
     this.clientId = process.env.GOOGLE_CLIENT_ID || '';
     this.clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
-    // 현재 실제 작동하는 Replit 도메인 강제 사용
-    const currentWorkingDomain = 'https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback';
+    // 동적 리다이렉트 URI 생성 (Vercel/Replit 모두 지원)
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.REPL_SLUG 
+      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+      : 'http://localhost:5000';
     
-    this.redirectUri = process.env.GOOGLE_REDIRECT_URI || currentWorkingDomain;
+    const dynamicRedirectUri = `${baseUrl}/api/auth/google/callback`;
+    this.redirectUri = process.env.GOOGLE_REDIRECT_URI || dynamicRedirectUri;
     this.scopes = [
       'https://www.googleapis.com/auth/drive.file', // 앱이 생성한 파일만 접근
       'https://www.googleapis.com/auth/userinfo.profile',
