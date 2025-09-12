@@ -257,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📂 전체 파일 수: ${allFiles.length}`);
       
       // MaruCS-Sync 폴더 찾기
-      const marucsSyncFolder = allFiles.find(file => 
+      const marucsSyncFolder = allFiles.find((file: any) => 
         file.name === 'MaruCS-Sync' && file.mimeType === 'application/vnd.google-apps.folder'
       );
       
@@ -279,10 +279,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // 하위 폴더들과 파일들 분류
-      const subFolders = folderContents.filter(item => 
+      const subFolders = folderContents.filter((item: any) => 
         item.mimeType === 'application/vnd.google-apps.folder'
       );
-      const files = folderContents.filter(item => 
+      const files = folderContents.filter((item: any) => 
         item.mimeType !== 'application/vnd.google-apps.folder'
       );
       
@@ -487,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 토큰 유효성 검사 및 갱신
       if (!defaultAccount.accessToken || !defaultAccount.tokenExpiresAt || 
-          new Date(defaultAccount.tokenExpiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+          new Date(defaultAccount.tokenExpiresAt || 0) <= new Date(Date.now() + 5 * 60 * 1000)) {
         console.log(`🔄 토큰 갱신: ${defaultAccount.email}`);
         if (!defaultAccount.refreshToken) {
           return res.status(401).json({ error: "리프레시 토큰이 없습니다. 계정을 다시 연결해주세요." });
@@ -596,7 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!defaultAccount) {
         defaultAccount = accounts
           .filter(acc => acc.isActive)
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())[0];
         
         console.log(`⚠️ 기본 계정이 없어서 최신 활성 계정 사용: ${defaultAccount?.email}`);
       }
@@ -703,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileName: fileName,
         fileSize: fileStats.size,
         webViewLink: uploadResult.webViewLink,
-        downloadLink: uploadResult.downloadLink
+        downloadLink: uploadResult.webContentLink || uploadResult.webViewLink
       });
       
     } catch (error) {
