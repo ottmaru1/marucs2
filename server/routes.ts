@@ -250,6 +250,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🔍 OAuth Redirect URI 디버깅 엔드포인트
+  app.get("/api/debug/oauth-redirect-uri", async (req, res) => {
+    try {
+      const oauthManager = new GoogleDriveOAuthManager();
+      
+      // 실제 요청 없이 redirect URI 계산
+      const fallbackUri = (oauthManager as any).computeRedirectUri();
+      
+      // 현재 요청 기반으로 redirect URI 계산
+      const requestBasedUri = (oauthManager as any).computeRedirectUri(req);
+      
+      // 환경변수 상태
+      const envVars = {
+        GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || null,
+        VERCEL_URL: process.env.VERCEL_URL || null,
+        REPL_SLUG: process.env.REPL_SLUG || null,
+        REPL_OWNER: process.env.REPL_OWNER || null,
+        NODE_ENV: process.env.NODE_ENV || 'development'
+      };
+      
+      // 요청 헤더 정보
+      const requestInfo = {
+        protocol: req.protocol,
+        host: req.get('host'),
+        'x-forwarded-proto': req.headers['x-forwarded-proto'],
+        'x-forwarded-host': req.headers['x-forwarded-host'],
+        origin: req.headers.origin,
+        referer: req.headers.referer
+      };
+      
+      // 테스트 OAuth URL 생성
+      const testAuthUrl = oauthManager.generateAuthUrl('debug-test', req);
+      
+      res.json({
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        environmentVariables: envVars,
+        requestHeaders: requestInfo,
+        computedURIs: {
+          fallback: fallbackUri,
+          requestBased: requestBasedUri
+        },
+        testOAuthURL: testAuthUrl,
+        databaseUrl: process.env.DATABASE_URL ? 'SET (masked)' : 'NOT SET'
+      });
+    } catch (error) {
+      console.error("OAuth redirect URI debug error:", error);
+      res.status(500).json({ 
+        error: "디버깅 중 오류가 발생했습니다", 
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // 배포환경 Secrets 확인 API (보안을 위해 존재 여부만 확인)
   app.get("/api/env-check", async (req, res) => {
     try {
@@ -270,12 +324,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // CLIENT_ID 앞부분만 안전하게 노출 (보안 목적)
       const clientIdPrefix = process.env.GOOGLE_CLIENT_ID ? 
         process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...' : 'N/A';
+      
+      // 현재 요청의 호스트 정보도 추가
+      const currentHost = req.get('host') || 'unknown';
+      const detectedEnvironment = currentHost.includes('replit.app') ? 'deployment' : 
+                                  currentHost.includes('localhost') ? 'development' :
+                                  'unknown';
 
       res.json({ 
         environment: process.env.NODE_ENV || 'development',
+        detectedEnvironment,
+        currentHost,
         allSecretsPresent: Object.values(envStatus).every(Boolean),
         secretsStatus: envStatus,
-        googleClientIdPrefix: clientIdPrefix
+        googleClientIdPrefix: clientIdPrefix,
+        googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || 'NOT SET'
       });
     } catch (error) {
       console.error("Environment check error:", error);
