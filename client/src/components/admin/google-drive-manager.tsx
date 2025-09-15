@@ -83,14 +83,22 @@ export default function GoogleDriveManager() {
   }, [queryClient, toast]);
 
   // Fetch accounts
-  const { data: accounts, isLoading } = useQuery({
+  const { data: accounts, isLoading, refetch } = useQuery({
     queryKey: ["/api/auth/google/accounts"],
     queryFn: async () => {
       const result = await apiRequest("/api/auth/google/accounts");
-      // 디버깅: 실제 받은 데이터 로그
-      console.log("🔍 Frontend received accounts data:", result);
-      if (result && result.length > 0) {
-        result.forEach((account: any, index: number) => {
+      // 타입 정규화: tokenExpired를 확실한 boolean으로 변환
+      const normalized = result?.map((account: any) => ({
+        ...account,
+        tokenExpired: typeof account.tokenExpired === 'string' 
+          ? account.tokenExpired === 'true' 
+          : !!account.tokenExpired
+      }));
+      
+      // 디버깅: 정규화된 데이터 로그
+      console.log("🔍 Frontend normalized accounts data:", normalized);
+      if (normalized && normalized.length > 0) {
+        normalized.forEach((account: any, index: number) => {
           console.log(`Account ${index + 1}:`, {
             email: account.email,
             tokenExpired: account.tokenExpired,
@@ -98,7 +106,7 @@ export default function GoogleDriveManager() {
           });
         });
       }
-      return result;
+      return normalized;
     },
     staleTime: 0, // 캐시를 즉시 stale로 설정
     gcTime: 0, // 가비지 컬렉션 즉시 실행
@@ -424,12 +432,20 @@ export default function GoogleDriveManager() {
         </h3>
         <div className="flex flex-col lg:flex-row gap-2">
           <Button 
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ["/api/auth/google/accounts"] });
-              toast({
-                title: "계정 상태 새로고침",
-                description: "계정 목록을 다시 불러왔습니다",
-              });
+            onClick={async () => {
+              try {
+                await refetch({ cancelRefetch: false });
+                toast({
+                  title: "계정 상태 새로고침",
+                  description: "계정 목록을 다시 불러왔습니다",
+                });
+              } catch (error) {
+                toast({
+                  title: "새로고침 실패",
+                  description: "계정 목록을 불러오는데 실패했습니다",
+                  variant: "destructive",
+                });
+              }
             }}
             className="bg-green-600 hover:bg-green-700 text-white flex-1 lg:flex-none"
           >
