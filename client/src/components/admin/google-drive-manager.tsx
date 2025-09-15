@@ -820,13 +820,13 @@ export default function GoogleDriveManager() {
                     <p className="font-medium text-purple-700">승인된 자바스크립트 원본:</p>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="bg-purple-100 px-2 py-1 rounded text-xs text-purple-800 flex-1">
-                        https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev
+                        https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev
                       </code>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          navigator.clipboard.writeText('https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev');
+                          navigator.clipboard.writeText('https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev');
                           toast({ title: "복사됨", description: "원본 URL이 클립보드에 복사되었습니다" });
                         }}
                         className="px-2 py-1 h-6 text-xs"
@@ -839,13 +839,13 @@ export default function GoogleDriveManager() {
                     <p className="font-medium text-purple-700">승인된 리디렉션 URI:</p>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="bg-purple-100 px-2 py-1 rounded text-xs text-purple-800 flex-1">
-                        https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback
+                        https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/api/auth/google/callback
                       </code>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          navigator.clipboard.writeText('https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback');
+                          navigator.clipboard.writeText('https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/api/auth/google/callback');
                           toast({ title: "복사됨", description: "리디렉션 URI가 클립보드에 복사되었습니다" });
                         }}
                         className="px-2 py-1 h-6 text-xs"
