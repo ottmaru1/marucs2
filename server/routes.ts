@@ -41,7 +41,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log("🟢 Registering Google OAuth callback endpoint");
   app.get("/api/auth/google/callback", async (req, res) => {
     console.log("=== Google OAuth Callback (EARLY) ===");
-    console.log("Query params:", req.query);
+    // 보안상 민감한 code, state는 로깅하지 않음
+    const { code, state: accountName, error, ...safeParams } = req.query;
+    console.log("Safe params:", { 
+      hasCode: !!code, 
+      hasState: !!accountName, 
+      error: error || null,
+      ...safeParams 
+    });
     console.log("=========================================");
     
     try {
