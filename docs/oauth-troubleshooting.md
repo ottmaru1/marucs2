@@ -18,7 +18,7 @@
 - access_type=offline
 - response_type=code 
 - state=ottmaru1@gmail.com
-- redirect_uri=https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback
+- redirect_uri=https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/api/auth/google/callback
 ```
 
 ## 가능한 원인들
@@ -43,6 +43,6 @@
 4. 🔄 필요시 브라우저 캐시 삭제 후 재시도
 
 ## 현재 테스트 환경
-- 도메인: 258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev
+- 도메인: 59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev
 - 관리자 접속: /admin (admin / admin123)
 - OAuth 엔드포인트: /api/auth/google/callback

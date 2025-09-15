@@ -34,15 +34,15 @@
 - 개발자 연락처 정보: 본인 Gmail 주소
 
 **앱 도메인 (중요!):**
-- 홈페이지: `https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev`
-- 개인정보처리방침: `https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/privacy`
-- 서비스 약관: `https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/terms`
+- 홈페이지: `https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev`
+- 개인정보처리방침: `https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/privacy`
+- 서비스 약관: `https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/terms`
 
 **승인된 도메인 추가:**
 ```
 replit.app
-workspace--ds1iwo.replit.app
-258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev
+worf.replit.dev
+59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev
 ```
 
 ### 2.4 범위(Scopes) 설정
@@ -71,15 +71,14 @@ workspace--ds1iwo.replit.app
 ### 3.3 JavaScript 원본 설정
 승인된 JavaScript 원본에 추가:
 ```
-https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev
-https://workspace--ds1iwo.replit.app
+https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev
 https://replit.app
 ```
 
 ### 3.4 리디렉션 URI 설정 (핵심!)
 승인된 리디렉션 URI에 **정확히** 다음과 같이 입력:
 ```
-https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback
+https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/api/auth/google/callback
 ```
 
 ⚠️ **주의사항:**
