@@ -246,6 +246,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 배포환경 Secrets 확인 API (보안을 위해 존재 여부만 확인)
+  app.get("/api/env-check", async (req, res) => {
+    try {
+      const requiredEnvs = [
+        'ENCRYPTION_KEY',
+        'GOOGLE_CLIENT_ID', 
+        'GOOGLE_CLIENT_SECRET',
+        'GOOGLE_REDIRECT_URI',
+        'ADMIN_PASSWORD',
+        'DATABASE_URL'
+      ];
+      
+      const envStatus = requiredEnvs.reduce((acc, key) => {
+        acc[key] = !!process.env[key];
+        return acc;
+      }, {} as Record<string, boolean>);
+
+      res.json({ 
+        environment: process.env.NODE_ENV || 'development',
+        allSecretsPresent: Object.values(envStatus).every(Boolean),
+        secretsStatus: envStatus
+      });
+    } catch (error) {
+      console.error("Environment check error:", error);
+      res.status(500).send("환경변수 확인 중 오류가 발생했습니다");
+    }
+  });
+
   app.post("/api/admin/change-password", async (req, res) => {
     try {
       // Check if user is authenticated
