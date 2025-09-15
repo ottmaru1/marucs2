@@ -408,6 +408,19 @@ export default function GoogleDriveManager() {
         </h3>
         <div className="flex flex-col lg:flex-row gap-2">
           <Button 
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ["/api/auth/google/accounts"] });
+              toast({
+                title: "계정 상태 새로고침",
+                description: "계정 목록을 다시 불러왔습니다",
+              });
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white flex-1 lg:flex-none"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            계정 새로고침
+          </Button>
+          <Button 
             onClick={() => refreshTokensMutation.mutate()}
             disabled={refreshTokensMutation.isPending || !accounts?.length}
             className="bg-orange-600 hover:bg-orange-700 text-white flex-1 lg:flex-none"
