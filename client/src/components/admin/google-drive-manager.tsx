@@ -108,10 +108,6 @@ export default function GoogleDriveManager() {
       }
       return normalized;
     },
-    select: (data) => data?.map((account: any) => ({
-      ...account,
-      tokenExpired: account.tokenExpired === true || account.tokenExpired === 'true'
-    })),
     staleTime: 0, // 캐시를 즉시 stale로 설정
     gcTime: 0, // 가비지 컬렉션 즉시 실행
   });
