@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,6 +55,32 @@ export default function GoogleDriveManager() {
       accountName: ""
     }
   });
+
+  // OAuth 완료 메시지 리스너 - 팝업에서 메인 창으로 완료 신호 받기
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'google-oauth-complete') {
+        // OAuth 완료 시 계정 목록 새로고침
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/google/accounts"] });
+        
+        const action = event.data.action;
+        const email = event.data.email;
+        
+        toast({
+          title: action === 'added' ? "✅ 계정 추가 완료" : "✅ 계정 업데이트 완료",
+          description: action === 'added' 
+            ? `${email} 계정이 성공적으로 추가되었습니다` 
+            : `${email} 계정 토큰이 성공적으로 갱신되었습니다`,
+        });
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [queryClient, toast]);
 
   // Fetch accounts
   const { data: accounts, isLoading } = useQuery({

@@ -82,7 +82,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         await storage.updateGoogleDriveAccount(existingAccount.id, tokenUpdateData);
-        return res.redirect(`/admin?success=${encodeURIComponent("계정이 성공적으로 업데이트되었습니다")}`);
+        
+        // OAuth 완료 페이지로 리다이렉트하여 메인 창에 완료 신호 전송
+        return res.send(`
+          <html>
+            <head><title>인증 완료</title></head>
+            <body>
+              <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+                <h2>✅ 계정이 성공적으로 업데이트되었습니다</h2>
+                <p>이 창은 곧 자동으로 닫힙니다...</p>
+              </div>
+              <script>
+                // 메인 창에 OAuth 완료 신호 전송
+                if (window.opener) {
+                  window.opener.postMessage({ 
+                    type: 'google-oauth-complete', 
+                    action: 'updated',
+                    email: '${tokenData.email}'
+                  }, '*');
+                }
+                // 1초 후 창 닫기
+                setTimeout(() => {
+                  window.close();
+                }, 1000);
+              </script>
+            </body>
+          </html>
+        `);
       } else {
         // 새 계정 저장
         const accountData = {
@@ -98,7 +124,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         await storage.createGoogleDriveAccount(accountData);
-        return res.redirect(`/admin?success=${encodeURIComponent("구글 드라이브 계정이 성공적으로 추가되었습니다")}`);
+        
+        // OAuth 완료 페이지로 리다이렉트하여 메인 창에 완료 신호 전송
+        return res.send(`
+          <html>
+            <head><title>인증 완료</title></head>
+            <body>
+              <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+                <h2>✅ 구글 드라이브 계정이 성공적으로 추가되었습니다</h2>
+                <p>이 창은 곧 자동으로 닫힙니다...</p>
+              </div>
+              <script>
+                // 메인 창에 OAuth 완료 신호 전송
+                if (window.opener) {
+                  window.opener.postMessage({ 
+                    type: 'google-oauth-complete', 
+                    action: 'added',
+                    email: '${tokenData.email}'
+                  }, '*');
+                }
+                // 1초 후 창 닫기
+                setTimeout(() => {
+                  window.close();
+                }, 1000);
+              </script>
+            </body>
+          </html>
+        `);
       }
     } catch (error) {
       console.error("OAuth callback error:", error);
