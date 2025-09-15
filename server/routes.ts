@@ -232,6 +232,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 버전 확인 API
+  app.get("/api/version", async (req, res) => {
+    try {
+      res.json({ 
+        version: "1.1.0-fixed",
+        buildTime: new Date().toISOString(),
+        fixedIssues: ["React key collision", "Boolean tokenExpired handling"]
+      });
+    } catch (error) {
+      console.error("Version check error:", error);
+      res.status(500).send("버전 확인 중 오류가 발생했습니다");
+    }
+  });
+
   app.post("/api/admin/change-password", async (req, res) => {
     try {
       // Check if user is authenticated
