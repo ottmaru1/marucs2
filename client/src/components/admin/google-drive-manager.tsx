@@ -563,7 +563,7 @@ export default function GoogleDriveManager() {
                               <Key className="w-3 h-3" />
                             </Button>
                           )}
-                          {account.tokenExpired && (
+                          {account.tokenExpired === true && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -590,7 +590,7 @@ export default function GoogleDriveManager() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {/* Mobile dropdown content will be same as desktop */}
-                              {account.tokenExpired && (
+                              {account.tokenExpired === true && (
                                 <DropdownMenuItem
                                   onClick={() => handleAuthAccount(account.id)}
                                   disabled={authAccountMutation.isPending}
@@ -678,7 +678,7 @@ export default function GoogleDriveManager() {
                               <Key className="w-3 h-3" />
                             </Button>
                           )}
-                          {account.tokenExpired && (
+                          {account.tokenExpired === true && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -705,7 +705,7 @@ export default function GoogleDriveManager() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                             {/* 토큰 재인증 메뉴 */}
-                            {(account.tokenExpired || !account.isActive) && (
+                            {(account.tokenExpired === true || !account.isActive) && (
                               <>
                                 <DropdownMenuItem
                                   onClick={() => handleAuthAccount(account.id)}
@@ -713,7 +713,7 @@ export default function GoogleDriveManager() {
                                   className="text-blue-600"
                                 >
                                   <RefreshCw className="w-4 h-4 mr-2" />
-                                  {account.tokenExpired ? "토큰 갱신" : "계정 재인증"}
+                                  {account.tokenExpired === true ? "토큰 갱신" : "계정 재인증"}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                               </>
