@@ -85,7 +85,23 @@ export default function GoogleDriveManager() {
   // Fetch accounts
   const { data: accounts, isLoading } = useQuery({
     queryKey: ["/api/auth/google/accounts"],
-    queryFn: () => apiRequest("/api/auth/google/accounts"),
+    queryFn: async () => {
+      const result = await apiRequest("/api/auth/google/accounts");
+      // 디버깅: 실제 받은 데이터 로그
+      console.log("🔍 Frontend received accounts data:", result);
+      if (result && result.length > 0) {
+        result.forEach((account: any, index: number) => {
+          console.log(`Account ${index + 1}:`, {
+            email: account.email,
+            tokenExpired: account.tokenExpired,
+            typeof_tokenExpired: typeof account.tokenExpired
+          });
+        });
+      }
+      return result;
+    },
+    staleTime: 0, // 캐시를 즉시 stale로 설정
+    gcTime: 0, // 가비지 컬렉션 즉시 실행
   });
 
   // Add account mutation
