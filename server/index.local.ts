@@ -43,8 +43,19 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
+    console.error('Express error handler:', err);
+    
+    // Special handling for database connection errors
+    if (err.code === '57P01' || err.message?.includes('terminating connection')) {
+      console.log('Database connection terminated, attempting to continue...');
+      return res.status(status).json({ message });
+    }
+    
     res.status(status).json({ message });
-    throw err;
+    // Don't throw in production-like scenarios to prevent crashes
+    if (process.env.NODE_ENV === 'development') {
+      throw err;
+    }
   });
 
   // importantly only setup vite in development and after

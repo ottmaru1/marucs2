@@ -45,6 +45,12 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     console.error('Express error handler:', err);
+    
+    // Special handling for database connection errors
+    if (err.code === '57P01' || err.message?.includes('terminating connection')) {
+      console.log('Database connection terminated, attempting to continue...');
+    }
+    
     return res.status(status).json({ message });
   });
 
