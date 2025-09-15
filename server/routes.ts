@@ -1461,6 +1461,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google Drive OAuth routes
   app.get("/api/auth/google/accounts", requireAdmin, async (req, res) => {
     try {
+      // 계정 상태는 자주 변경되므로 캐싱 비활성화
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const accounts = await storage.getGoogleDriveAccounts();
       // 토큰 정보는 제외하고 안전한 정보만 전송
       const safeAccounts = accounts.map(account => ({
