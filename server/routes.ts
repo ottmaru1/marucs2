@@ -69,9 +69,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingAccount = await storage.getGoogleDriveAccountByEmail(tokenData.email);
       
       if (existingAccount) {
-        // 기존 계정의 토큰 업데이트
+        // 기존 계정의 토큰 업데이트 (재인증 시 활성화)
         const tokenUpdateData: any = {
-          accessToken: encryptToken(tokenData.accessToken)
+          accessToken: encryptToken(tokenData.accessToken),
+          isActive: true // 🔧 중요: 재인증 시 계정 다시 활성화
         };
         
         if (tokenData.refreshToken) {
@@ -79,6 +80,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         if (tokenData.expiryDate) {
           tokenUpdateData.tokenExpiresAt = tokenData.expiryDate;
+        }
+        if ((tokenData as any).picture) {
+          tokenUpdateData.profilePicture = (tokenData as any).picture;
         }
         
         await storage.updateGoogleDriveAccount(existingAccount.id, tokenUpdateData);
