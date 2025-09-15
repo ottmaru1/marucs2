@@ -391,7 +391,7 @@ export default function GoogleDriveManager() {
         </div>
       );
     }
-    if (account.tokenExpired) {
+    if (account.tokenExpired === true) {
       console.log(`🚨 RENDERING "토큰 만료" for ${account.email} because tokenExpired is:`, account.tokenExpired);
       return (
         <div className="flex items-center gap-2">
@@ -550,8 +550,8 @@ export default function GoogleDriveManager() {
           <CardContent>
             {/* Mobile Card View */}
             <div className="block lg:hidden space-y-4">
-              {accounts.map((account: GoogleDriveAccount) => (
-                <Card key={account.id} className="bg-gray-50 border border-gray-200">
+              {accounts.map((account: GoogleDriveAccount, index: number) => (
+                <Card key={`${account.id || account.email}-${index}`} className="bg-gray-50 border border-gray-200">
                   <CardContent className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between">
@@ -665,8 +665,8 @@ export default function GoogleDriveManager() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {accounts.map((account: GoogleDriveAccount) => (
-                    <TableRow key={account.id}>
+                  {accounts.map((account: GoogleDriveAccount, index: number) => (
+                    <TableRow key={`${account.id || account.email}-${index}`}>
                       <TableCell className="text-gray-900 font-medium">
                         {account.accountName}
                       </TableCell>
