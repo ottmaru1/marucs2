@@ -60,8 +60,14 @@ export default function GoogleDriveManager() {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'google-oauth-complete') {
-        // OAuth 완료 시 계정 목록 새로고침
+        // OAuth 완료 시 계정 목록 강제 새로고침
+        queryClient.removeQueries({ queryKey: ["/api/auth/google/accounts"] });
         queryClient.invalidateQueries({ queryKey: ["/api/auth/google/accounts"] });
+        
+        // 추가로 즉시 refetch 실행
+        setTimeout(() => {
+          queryClient.refetchQueries({ queryKey: ["/api/auth/google/accounts"] });
+        }, 100);
         
         const action = event.data.action;
         const email = event.data.email;
