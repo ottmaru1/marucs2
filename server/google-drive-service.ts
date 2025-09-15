@@ -63,8 +63,8 @@ export function decryptToken(encryptedText: string | object): string {
     }
   } catch (error) {
     console.error('Token decryption failed:', error);
-    // 복호화 실패 시 원본 텍스트 반환 (평문 토큰일 가능성)
-    return typeof encryptedText === 'string' ? encryptedText : '';
+    // 복호화 실패 시 빈 문자열 반환 (명확한 에러 상태)
+    return '';
   }
 }
 
@@ -115,7 +115,8 @@ export class GoogleDriveOAuthManager {
       access_type: 'offline', // 리프레시 토큰 받기 위해
       scope: this.scopes,
       state: accountName, // 계정 이름을 state로 전달
-      prompt: 'consent' // 매번 consent 화면 표시 (리프레시 토큰 보장)
+      prompt: 'consent', // 매번 consent 화면 표시 (리프레시 토큰 보장)
+      include_granted_scopes: true // 기존 권한 포함
     });
     
     console.log("Generated Auth URL:", authUrl);
