@@ -30,11 +30,23 @@
 2. 사용자 인증 정보 만들기 → OAuth 클라이언트 ID
 3. 애플리케이션 유형: **웹 애플리케이션**
 4. 이름: `MaruComSys Web Client`
-5. 승인된 자바스크립트 원본:
-   - `https://marucs2.replit.app`
-   - `https://replit.app`
+5. **승인된 자바스크립트 원본 (복사해서 붙여넣기):**
+
+<button onclick="navigator.clipboard.writeText('https://marucs2.replit.app')">📋 메인 원본 URI 복사</button>
+```
+https://marucs2.replit.app
+```
+
+<button onclick="navigator.clipboard.writeText('https://replit.app')">📋 기본 원본 URI 복사</button>
+```
+https://replit.app
+```
 6. **승인된 리디렉션 URI (가장 중요!):**
-   - `https://marucs2.replit.app/api/auth/google/callback`
+
+<button onclick="navigator.clipboard.writeText('https://marucs2.replit.app/api/auth/google/callback')">📋 리디렉션 URI 복사</button>
+```
+https://marucs2.replit.app/api/auth/google/callback
+```
 
 ## 3단계: API 활성화
 1. APIs & Services → Library
