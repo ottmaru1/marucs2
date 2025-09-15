@@ -300,7 +300,7 @@ export default function GoogleDriveManager() {
   };
 
   const handleDeleteAccount = (accountId: string, accountName: string) => {
-    const account = accounts.find(acc => acc.id === accountId);
+    const account = accounts?.find((acc: GoogleDriveAccount) => acc.id === accountId);
     if (account?.isDefault) {
       toast({
         title: "오류",
@@ -463,7 +463,7 @@ export default function GoogleDriveManager() {
           <CardContent>
             {/* Mobile Card View */}
             <div className="block lg:hidden space-y-4">
-              {accounts.map((account) => (
+              {accounts.map((account: GoogleDriveAccount) => (
                 <Card key={account.id} className="bg-gray-50 border border-gray-200">
                   <CardContent className="p-4">
                     <div className="space-y-3">
@@ -578,7 +578,7 @@ export default function GoogleDriveManager() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {accounts.map((account) => (
+                  {accounts.map((account: GoogleDriveAccount) => (
                     <TableRow key={account.id}>
                       <TableCell className="text-gray-900 font-medium">
                         {account.accountName}
