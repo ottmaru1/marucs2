@@ -74,21 +74,11 @@ export function decryptToken(encryptedText: string | object): string {
 export class GoogleDriveOAuthManager {
   private clientId: string;
   private clientSecret: string;
-  private redirectUri: string;
   private scopes: string[];
 
   constructor() {
     this.clientId = process.env.GOOGLE_CLIENT_ID || '';
     this.clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
-    // 동적 리다이렉트 URI 생성 (Vercel/Replit 모두 지원)
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.REPL_SLUG 
-      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-      : 'http://localhost:5000';
-    
-    const dynamicRedirectUri = `${baseUrl}/api/auth/google/callback`;
-    this.redirectUri = process.env.GOOGLE_REDIRECT_URI || dynamicRedirectUri;
     this.scopes = [
       'https://www.googleapis.com/auth/drive.file', // 앱이 생성한 파일만 접근
       'https://www.googleapis.com/auth/userinfo.profile',
@@ -97,18 +87,46 @@ export class GoogleDriveOAuthManager {
   }
 
   /**
-   * OAuth 인증 URL 생성
+   * 요청 기반으로 동적 리디렉션 URI 생성
    */
-  generateAuthUrl(accountName: string): string {
+  private computeRedirectUri(req?: any): string {
+    // 환경변수가 설정되어 있으면 우선 사용 (수동 오버라이드)
+    if (process.env.GOOGLE_REDIRECT_URI) {
+      return process.env.GOOGLE_REDIRECT_URI;
+    }
+
+    // 요청 기반으로 동적 계산
+    if (req) {
+      const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.headers['x-forwarded-host'] || req.get('host');
+      return `${proto}://${host}/api/auth/google/callback`;
+    }
+
+    // 폴백: 환경변수 기반 추측
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.REPL_SLUG 
+      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+      : 'http://localhost:5000';
+    
+    return `${baseUrl}/api/auth/google/callback`;
+  }
+
+  /**
+   * OAuth 인증 URL 생성 (요청 기반 동적 URI)
+   */
+  generateAuthUrl(accountName: string, req?: any): string {
+    const redirectUri = this.computeRedirectUri(req);
+    
     console.log("=== OAuth URL 생성 ===");
     console.log("Client ID:", this.clientId?.substring(0, 20) + "...");
-    console.log("Redirect URI:", this.redirectUri);
+    console.log("Redirect URI:", redirectUri);
     console.log("Account Name:", accountName);
     
     const oauth2Client = new OAuth2Client(
       this.clientId,
       this.clientSecret,
-      this.redirectUri
+      redirectUri
     );
 
     const authUrl = oauth2Client.generateAuthUrl({
@@ -125,13 +143,15 @@ export class GoogleDriveOAuthManager {
   }
 
   /**
-   * 인증 코드로 토큰 교환
+   * 인증 코드로 토큰 교환 (요청 기반 동적 URI)
    */
-  async exchangeCodeForTokens(code: string, accountName: string) {
+  async exchangeCodeForTokens(code: string, accountName: string, req?: any) {
+    const redirectUri = this.computeRedirectUri(req);
+    
     const oauth2Client = new OAuth2Client(
       this.clientId,
       this.clientSecret,
-      this.redirectUri
+      redirectUri
     );
 
     try {
@@ -160,11 +180,11 @@ export class GoogleDriveOAuthManager {
   /**
    * 리프레시 토큰을 이용한 액세스 토큰 갱신
    */
-  async refreshAccessToken(refreshToken: string) {
+  async refreshAccessToken(refreshToken: string, req?: any) {
+    // 토큰 갱신에는 redirect URI가 필요하지 않으므로 생략
     const oauth2Client = new OAuth2Client(
       this.clientId,
-      this.clientSecret,
-      this.redirectUri
+      this.clientSecret
     );
 
     try {

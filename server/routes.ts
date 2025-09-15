@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 인증 코드를 토큰으로 교환
-      const tokenData = await googleDriveOAuth.exchangeCodeForTokens(code as string, accountName as string);
+      const tokenData = await googleDriveOAuth.exchangeCodeForTokens(code as string, accountName as string, req);
       
       // 기존 계정이 있는지 확인
       const existingAccount = await storage.getGoogleDriveAccountByEmail(tokenData.email);
@@ -1559,7 +1559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "계정 이름이 필요합니다" });
       }
       
-      const authUrl = googleDriveOAuth.generateAuthUrl(accountName);
+      const authUrl = googleDriveOAuth.generateAuthUrl(accountName, req);
       res.json({ authUrl });
     } catch (error) {
       console.error("Error generating auth URL:", error);
@@ -1583,7 +1583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 재인증 URL 생성 (계정 이름을 state로 사용)
-      const authUrl = googleDriveOAuth.generateAuthUrl(account.accountName);
+      const authUrl = googleDriveOAuth.generateAuthUrl(account.accountName, req);
       res.json({ authUrl });
     } catch (error) {
       console.error("Error generating reauth URL:", error);
