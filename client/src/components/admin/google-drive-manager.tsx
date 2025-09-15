@@ -108,6 +108,10 @@ export default function GoogleDriveManager() {
       }
       return normalized;
     },
+    select: (data) => data?.map((account: any) => ({
+      ...account,
+      tokenExpired: account.tokenExpired === true || account.tokenExpired === 'true'
+    })),
     staleTime: 0, // 캐시를 즉시 stale로 설정
     gcTime: 0, // 가비지 컬렉션 즉시 실행
   });
@@ -376,7 +380,7 @@ export default function GoogleDriveManager() {
         </div>
       );
     }
-    if (account.tokenExpired) {
+    if (account.tokenExpired === true) {
       return (
         <div className="flex items-center gap-2">
           <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300">
