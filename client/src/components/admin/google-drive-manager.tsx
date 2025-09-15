@@ -87,16 +87,17 @@ export default function GoogleDriveManager() {
     queryKey: ["/api/auth/google/accounts"],
     queryFn: async () => {
       const result = await apiRequest("/api/auth/google/accounts");
-      // 타입 정규화: tokenExpired를 확실한 boolean으로 변환
-      const normalized = result?.map((account: any) => ({
+      return result;
+    },
+    select: (data) => {
+      // 정규화: tokenExpired를 확실한 boolean으로 변환
+      const normalized = data?.map((account: any) => ({
         ...account,
-        tokenExpired: typeof account.tokenExpired === 'string' 
-          ? account.tokenExpired === 'true' 
-          : !!account.tokenExpired
+        tokenExpired: account.tokenExpired === true || account.tokenExpired === 'true'
       }));
       
       // 디버깅: 정규화된 데이터 로그
-      console.log("🔍 Frontend normalized accounts data:", normalized);
+      console.log("🔍 Frontend select normalized accounts data:", normalized);
       if (normalized && normalized.length > 0) {
         normalized.forEach((account: any, index: number) => {
           console.log(`Account ${index + 1}:`, {
@@ -108,8 +109,8 @@ export default function GoogleDriveManager() {
       }
       return normalized;
     },
-    staleTime: 0, // 캐시를 즉시 stale로 설정
-    gcTime: 0, // 가비지 컬렉션 즉시 실행
+    staleTime: 10_000, // 10초 동안 캐시 유지
+    gcTime: 5 * 60_000, // 5분 동안 가비지 컬렉션 방지
   });
 
   // Add account mutation
@@ -366,6 +367,14 @@ export default function GoogleDriveManager() {
   };
 
   const renderAccountStatus = (account: GoogleDriveAccount) => {
+    // 임시 디버깅: 렌더링 함수에서 실제 받은 값 로그
+    console.log(`🎯 renderAccountStatus for ${account.email}:`, {
+      tokenExpired: account.tokenExpired,
+      typeof_tokenExpired: typeof account.tokenExpired,
+      isActive: account.isActive,
+      isDefault: account.isDefault
+    });
+    
     if (!account.isActive) {
       return (
         <div className="flex items-center gap-2">
@@ -376,7 +385,8 @@ export default function GoogleDriveManager() {
         </div>
       );
     }
-    if (account.tokenExpired === true) {
+    if (account.tokenExpired) {
+      console.log(`🚨 RENDERING "토큰 만료" for ${account.email} because tokenExpired is:`, account.tokenExpired);
       return (
         <div className="flex items-center gap-2">
           <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300">
