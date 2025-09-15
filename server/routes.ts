@@ -263,10 +263,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, {} as Record<string, boolean>);
 
+      // CLIENT_ID 앞부분만 안전하게 노출 (보안 목적)
+      const clientIdPrefix = process.env.GOOGLE_CLIENT_ID ? 
+        process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...' : 'N/A';
+
       res.json({ 
         environment: process.env.NODE_ENV || 'development',
         allSecretsPresent: Object.values(envStatus).every(Boolean),
-        secretsStatus: envStatus
+        secretsStatus: envStatus,
+        googleClientIdPrefix: clientIdPrefix
       });
     } catch (error) {
       console.error("Environment check error:", error);
