@@ -223,6 +223,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/auth-status", async (req, res) => {
     try {
+      // 캐시 비활성화로 인증 상태 실시간 반영
+      res.set('Cache-Control', 'no-store');
       res.json({ authenticated: !!req.session.isAdmin });
     } catch (error) {
       console.error("Auth status check error:", error);
