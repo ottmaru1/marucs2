@@ -1467,17 +1467,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Expires', '0');
       
       const accounts = await storage.getGoogleDriveAccounts();
+      const currentTime = new Date();
+      
       // 토큰 정보는 제외하고 안전한 정보만 전송
-      const safeAccounts = accounts.map(account => ({
-        id: account.id,
-        accountName: account.accountName,
-        email: account.email,
-        isActive: account.isActive,
-        isDefault: account.isDefault,
-        profilePicture: account.profilePicture,
-        createdAt: account.createdAt,
-        tokenExpired: account.tokenExpiresAt ? account.tokenExpiresAt < new Date() : true
-      }));
+      const safeAccounts = accounts.map(account => {
+        const tokenExpiryDate = account.tokenExpiresAt ? new Date(account.tokenExpiresAt) : null;
+        const isExpired = tokenExpiryDate ? tokenExpiryDate < currentTime : true;
+        
+        // 디버깅 로그
+        console.log(`🔍 Token Check - ${account.email}:`);
+        console.log(`  - Expires At (DB): ${account.tokenExpiresAt}`);
+        console.log(`  - Expires At (Date): ${tokenExpiryDate}`);
+        console.log(`  - Current Time: ${currentTime}`);
+        console.log(`  - Is Expired: ${isExpired}`);
+        
+        return {
+          id: account.id,
+          accountName: account.accountName,
+          email: account.email,
+          isActive: account.isActive,
+          isDefault: account.isDefault,
+          profilePicture: account.profilePicture,
+          createdAt: account.createdAt,
+          tokenExpired: isExpired
+        };
+      });
       res.json(safeAccounts);
     } catch (error) {
       console.error("Error fetching Google Drive accounts:", error);
