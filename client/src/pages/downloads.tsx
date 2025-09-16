@@ -101,22 +101,19 @@ export default function Downloads() {
         });
       }
       
-      // 다운로드 링크 생성 및 실행
-      const link = document.createElement('a');
+      // 브라우저 다이얼로그를 위한 새 탭 열기
+      let downloadUrl: string;
       
       if (download.googleDriveFileId) {
         // Google Drive 파일은 API를 통해 다운로드
-        link.href = `/api/downloads/${download.id}/download`;
+        downloadUrl = `/api/downloads/${download.id}/download`;
       } else {
         // 로컬 파일은 직접 다운로드
-        link.href = download.downloadUrl;
+        downloadUrl = download.downloadUrl;
       }
       
-      link.download = download.fileName;
-      link.target = '_self';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // 새 탭에서 열어서 브라우저가 저장/열기 다이얼로그 표시하도록 함
+      window.open(downloadUrl, '_blank');
 
       // Google Drive 파일의 경우 추가 안내
       if (download.googleDriveFileId) {
