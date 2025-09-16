@@ -112,68 +112,8 @@ export default function Downloads() {
         downloadUrl = download.downloadUrl;
       }
       
-      // File System Access API를 사용한 브라우저 네이티브 저장 다이얼로그
-      if ((window as any).showSaveFilePicker) {
-        try {
-          // 크롬/엣지: 네이티브 저장 다이얼로그 표시
-          const fileHandle = await (window as any).showSaveFilePicker({
-            suggestedName: download.fileName,
-            types: [{
-              description: '파일',
-              accept: { '*/*': ['.exe', '.zip', '.pdf', '.txt'] }
-            }]
-          });
-          
-          toast({
-            title: "다운로드 진행 중",
-            description: `${download.fileName} 파일을 다운로드하는 중입니다...`,
-            variant: "default"
-          });
-          
-          // 파일 스트림 다운로드
-          const writableStream = await fileHandle.createWritable();
-          const response = await fetch(downloadUrl);
-          
-          if (!response.ok) {
-            throw new Error('다운로드 실패');
-          }
-          
-          await response.body!.pipeTo(writableStream);
-          
-          toast({
-            title: "다운로드 완료",
-            description: `${download.fileName} 파일이 성공적으로 저장되었습니다.`,
-            variant: "default"
-          });
-          
-        } catch (error: any) {
-          if (error.name === 'AbortError') {
-            toast({
-              title: "다운로드 취소",
-              description: "사용자가 다운로드를 취소했습니다.",
-              variant: "default"
-            });
-          } else {
-            throw error;
-          }
-        }
-      } else {
-        // 사파리/파이어폭스: 폴백 안내 메시지
-        toast({
-          title: "브라우저 제한",
-          description: "이 브라우저에서는 저장 다이얼로그를 표시할 수 없습니다. Chrome 또는 Edge를 사용하시거나, 브라우저 설정에서 '다운로드 전 저장 위치 묻기'를 활성화해주세요.",
-          variant: "destructive",
-          duration: 8000
-        });
-        
-        // 폴백: 기존 방식으로 다운로드
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = download.fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      // 브라우저 네이티브 다운로드 다이얼로그 (이전 방식 복원)
+      window.location.assign(downloadUrl);
 
       // Google Drive 파일의 경우 추가 안내
       if (download.googleDriveFileId) {
