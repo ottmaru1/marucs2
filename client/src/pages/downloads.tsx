@@ -101,7 +101,7 @@ export default function Downloads() {
         });
       }
       
-      // 브라우저 다이얼로그를 위한 현재 탭에서 열기
+      // 브라우저 다운로드 다이얼로그를 위한 iframe 방식
       let downloadUrl: string;
       
       if (download.googleDriveFileId) {
@@ -112,8 +112,18 @@ export default function Downloads() {
         downloadUrl = download.downloadUrl;
       }
       
-      // 현재 탭에서 열어서 브라우저가 저장/열기 다이얼로그 표시하도록 함
-      window.location.href = downloadUrl;
+      // 숨겨진 iframe을 사용해서 브라우저 다운로드 다이얼로그 트리거
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = downloadUrl;
+      document.body.appendChild(iframe);
+      
+      // iframe 정리 (5초 후)
+      setTimeout(() => {
+        if (iframe && iframe.parentNode) {
+          document.body.removeChild(iframe);
+        }
+      }, 5000);
 
       // Google Drive 파일의 경우 추가 안내
       if (download.googleDriveFileId) {
