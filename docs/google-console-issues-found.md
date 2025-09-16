@@ -4,7 +4,7 @@
 
 ### 1. 승인된 도메인 문제 ❌
 현재 설정: `workspace--ds1iwo.replit.app`
-필요한 설정: `marucs2.replit.app`
+필요한 설정: `258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev`
 
 ### 2. 앱 도메인 URL 문제 ❌
 - 개인정보처리방침 링크: `https://workspace--ds1iwo.replit.app/privacy` (잘못된 도메인)
@@ -14,17 +14,17 @@
 
 ### A. 승인된 도메인 변경
 1. "승인된 도메인" 섹션에서 기존 도메인 삭제
-2. 새 도메인 추가: `marucs2.replit.app`
+2. 새 도메인 추가: `258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev`
 
 ### B. 앱 도메인 URL 수정
 개인정보처리방침 링크:
 ```
-https://marucs2.replit.app/privacy
+https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/privacy
 ```
 
 서비스 약관 링크:
 ```
-https://marucs2.replit.app/terms
+https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/terms
 ```
 
 ## 추가 확인 사항

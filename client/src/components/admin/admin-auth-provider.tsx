@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 
 export interface AdminAuthResult {
   isAuthenticated: boolean;
@@ -35,9 +35,7 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch("/api/admin/auth-status", {
-        credentials: "include"
-      });
+      const response = await fetch("/api/admin/auth-status");
       const data = await response.json();
       setIsAuthenticated(data.authenticated);
     } catch (error) {
@@ -55,17 +53,11 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({ password })
       });
       
       if (response.ok) {
         setIsAuthenticated(true);
-        
-        // 로그인 성공 시 캐시 무효화로 계정 목록 로드
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/auth-status"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/google/accounts"] });
-        
         return true;
       } else {
         return false;
@@ -79,8 +71,7 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
   const logout = async (): Promise<void> => {
     try {
       await fetch("/api/admin/logout", {
-        method: "POST",
-        credentials: "include"
+        method: "POST"
       });
       setIsAuthenticated(false);
     } catch (error) {

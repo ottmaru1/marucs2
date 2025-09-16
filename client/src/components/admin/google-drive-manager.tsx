@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,67 +56,10 @@ export default function GoogleDriveManager() {
     }
   });
 
-  // OAuth 완료 메시지 리스너 - 팝업에서 메인 창으로 완료 신호 받기
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'google-oauth-complete') {
-        // OAuth 완료 시 계정 목록 강제 새로고침
-        queryClient.removeQueries({ queryKey: ["/api/auth/google/accounts"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/google/accounts"] });
-        
-        // 추가로 즉시 refetch 실행
-        setTimeout(() => {
-          queryClient.refetchQueries({ queryKey: ["/api/auth/google/accounts"] });
-        }, 100);
-        
-        const action = event.data.action;
-        const email = event.data.email;
-        
-        toast({
-          title: action === 'added' ? "✅ 계정 추가 완료" : "✅ 계정 업데이트 완료",
-          description: action === 'added' 
-            ? `${email} 계정이 성공적으로 추가되었습니다` 
-            : `${email} 계정 토큰이 성공적으로 갱신되었습니다`,
-        });
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, [queryClient, toast]);
-
   // Fetch accounts
-  const { data: accounts, isLoading, refetch } = useQuery({
+  const { data: accounts, isLoading } = useQuery({
     queryKey: ["/api/auth/google/accounts"],
-    queryFn: async () => {
-      const result = await apiRequest("/api/auth/google/accounts");
-      return result;
-    },
-    select: (data) => {
-      // 정규화: tokenExpired를 확실한 boolean으로 변환
-      const normalized = data?.map((account: any) => ({
-        ...account,
-        tokenExpired: account.tokenExpired === true || account.tokenExpired === 'true'
-      }));
-      
-      // 디버깅: 정규화된 데이터 로그
-      console.log("🔍 Frontend select normalized accounts data:", normalized);
-      if (normalized && normalized.length > 0) {
-        normalized.forEach((account: any, index: number) => {
-          console.log(`Account ${index + 1}:`, {
-            email: account.email,
-            tokenExpired: account.tokenExpired,
-            typeof_tokenExpired: typeof account.tokenExpired
-          });
-        });
-      }
-      return normalized;
-    },
-    staleTime: 10_000, // 10초 동안 캐시 유지
-    gcTime: 5 * 60_000, // 5분 동안 가비지 컬렉션 방지
+    queryFn: () => apiRequest("/api/auth/google/accounts"),
   });
 
   // Add account mutation
@@ -357,7 +300,7 @@ export default function GoogleDriveManager() {
   };
 
   const handleDeleteAccount = (accountId: string, accountName: string) => {
-    const account = accounts?.find((acc: GoogleDriveAccount) => acc.id === accountId);
+    const account = accounts.find(acc => acc.id === accountId);
     if (account?.isDefault) {
       toast({
         title: "오류",
@@ -373,14 +316,6 @@ export default function GoogleDriveManager() {
   };
 
   const renderAccountStatus = (account: GoogleDriveAccount) => {
-    // 임시 디버깅: 렌더링 함수에서 실제 받은 값 로그
-    console.log(`🎯 renderAccountStatus for ${account.email}:`, {
-      tokenExpired: account.tokenExpired,
-      typeof_tokenExpired: typeof account.tokenExpired,
-      isActive: account.isActive,
-      isDefault: account.isDefault
-    });
-    
     if (!account.isActive) {
       return (
         <div className="flex items-center gap-2">
@@ -391,8 +326,7 @@ export default function GoogleDriveManager() {
         </div>
       );
     }
-    if (account.tokenExpired === true) {
-      console.log(`🚨 RENDERING "토큰 만료" for ${account.email} because tokenExpired is:`, account.tokenExpired);
+    if (account.tokenExpired) {
       return (
         <div className="flex items-center gap-2">
           <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300">
@@ -447,27 +381,6 @@ export default function GoogleDriveManager() {
           구글 드라이브 계정 관리
         </h3>
         <div className="flex flex-col lg:flex-row gap-2">
-          <Button 
-            onClick={async () => {
-              try {
-                await refetch({ cancelRefetch: false });
-                toast({
-                  title: "계정 상태 새로고침",
-                  description: "계정 목록을 다시 불러왔습니다",
-                });
-              } catch (error) {
-                toast({
-                  title: "새로고침 실패",
-                  description: "계정 목록을 불러오는데 실패했습니다",
-                  variant: "destructive",
-                });
-              }
-            }}
-            className="bg-green-600 hover:bg-green-700 text-white flex-1 lg:flex-none"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            계정 새로고침
-          </Button>
           <Button 
             onClick={() => refreshTokensMutation.mutate()}
             disabled={refreshTokensMutation.isPending || !accounts?.length}
@@ -550,8 +463,8 @@ export default function GoogleDriveManager() {
           <CardContent>
             {/* Mobile Card View */}
             <div className="block lg:hidden space-y-4">
-              {accounts.map((account: GoogleDriveAccount, index: number) => (
-                <Card key={`${account.id || account.email}-${index}`} className="bg-gray-50 border border-gray-200">
+              {accounts.map((account) => (
+                <Card key={account.id} className="bg-gray-50 border border-gray-200">
                   <CardContent className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between">
@@ -575,7 +488,7 @@ export default function GoogleDriveManager() {
                               <Key className="w-3 h-3" />
                             </Button>
                           )}
-                          {account.tokenExpired === true && (
+                          {account.tokenExpired && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -602,7 +515,7 @@ export default function GoogleDriveManager() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {/* Mobile dropdown content will be same as desktop */}
-                              {account.tokenExpired === true && (
+                              {account.tokenExpired && (
                                 <DropdownMenuItem
                                   onClick={() => handleAuthAccount(account.id)}
                                   disabled={authAccountMutation.isPending}
@@ -665,8 +578,8 @@ export default function GoogleDriveManager() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {accounts.map((account: GoogleDriveAccount, index: number) => (
-                    <TableRow key={`${account.id || account.email}-${index}`}>
+                  {accounts.map((account) => (
+                    <TableRow key={account.id}>
                       <TableCell className="text-gray-900 font-medium">
                         {account.accountName}
                       </TableCell>
@@ -690,7 +603,7 @@ export default function GoogleDriveManager() {
                               <Key className="w-3 h-3" />
                             </Button>
                           )}
-                          {account.tokenExpired === true && (
+                          {account.tokenExpired && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -717,7 +630,7 @@ export default function GoogleDriveManager() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                             {/* 토큰 재인증 메뉴 */}
-                            {(account.tokenExpired === true || !account.isActive) && (
+                            {(account.tokenExpired || !account.isActive) && (
                               <>
                                 <DropdownMenuItem
                                   onClick={() => handleAuthAccount(account.id)}
@@ -725,7 +638,7 @@ export default function GoogleDriveManager() {
                                   className="text-blue-600"
                                 >
                                   <RefreshCw className="w-4 h-4 mr-2" />
-                                  {account.tokenExpired === true ? "토큰 갱신" : "계정 재인증"}
+                                  {account.tokenExpired ? "토큰 갱신" : "계정 재인증"}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                               </>
@@ -820,13 +733,13 @@ export default function GoogleDriveManager() {
                     <p className="font-medium text-purple-700">승인된 자바스크립트 원본:</p>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="bg-purple-100 px-2 py-1 rounded text-xs text-purple-800 flex-1">
-                        https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev
+                        https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev
                       </code>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          navigator.clipboard.writeText('https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev');
+                          navigator.clipboard.writeText('https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev');
                           toast({ title: "복사됨", description: "원본 URL이 클립보드에 복사되었습니다" });
                         }}
                         className="px-2 py-1 h-6 text-xs"
@@ -839,13 +752,13 @@ export default function GoogleDriveManager() {
                     <p className="font-medium text-purple-700">승인된 리디렉션 URI:</p>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="bg-purple-100 px-2 py-1 rounded text-xs text-purple-800 flex-1">
-                        https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/api/auth/google/callback
+                        https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback
                       </code>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          navigator.clipboard.writeText('https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/api/auth/google/callback');
+                          navigator.clipboard.writeText('https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback');
                           toast({ title: "복사됨", description: "리디렉션 URI가 클립보드에 복사되었습니다" });
                         }}
                         className="px-2 py-1 h-6 text-xs"

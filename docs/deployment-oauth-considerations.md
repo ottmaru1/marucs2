@@ -3,7 +3,7 @@
 ## 배포 시 변경될 수 있는 사항
 
 ### 1. 도메인 변경 가능성
-**현재**: `59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev`
+**현재**: `258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev`
 **배포 후**: `프로젝트명.replit.app` 또는 커스텀 도메인
 
 ### 2. 수정해야 할 구글 클라우드 콘솔 설정

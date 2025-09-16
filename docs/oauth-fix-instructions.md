@@ -19,7 +19,7 @@ https://workspace--ds1iwo.replit.app/api/auth/google/callback
 
 **새로운 (올바른) URI:**
 ```
-https://marucs2.replit.app/api/auth/google/callback
+https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback
 ```
 
 ### 2. Replit 환경변수 업데이트
@@ -32,6 +32,6 @@ https://marucs2.replit.app/api/auth/google/callback
 - 성공적으로 리디렉트되는지 확인
 
 ## 참고 사항
-- Replit의 실제 도메인은 `marucs2.replit.app` 사용
-- 구버전 도메인들은 더 이상 사용하지 않음
+- Replit의 실제 도메인은 `spock.replit.dev` 서브도메인을 사용
+- `workspace--ds1iwo.replit.app`은 외부 접근이 제한됨
 - 설정 변경 후 2-3분 대기 필요 (구글 서버 전파 시간)

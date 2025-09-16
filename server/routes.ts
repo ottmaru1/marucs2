@@ -41,14 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log("🟢 Registering Google OAuth callback endpoint");
   app.get("/api/auth/google/callback", async (req, res) => {
     console.log("=== Google OAuth Callback (EARLY) ===");
-    // 보안상 민감한 code, state는 로깅하지 않음
-    const { code, state: accountName, error, ...safeParams } = req.query;
-    console.log("Safe params:", { 
-      hasCode: !!code, 
-      hasState: !!accountName, 
-      error: error || null,
-      ...safeParams 
-    });
+    console.log("Query params:", req.query);
     console.log("=========================================");
     
     try {
@@ -63,16 +56,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 인증 코드를 토큰으로 교환
-      const tokenData = await googleDriveOAuth.exchangeCodeForTokens(code as string, accountName as string, req);
+      const tokenData = await googleDriveOAuth.exchangeCodeForTokens(code as string, accountName as string);
       
       // 기존 계정이 있는지 확인
       const existingAccount = await storage.getGoogleDriveAccountByEmail(tokenData.email);
       
       if (existingAccount) {
-        // 기존 계정의 토큰 업데이트 (재인증 시 활성화)
+        // 기존 계정의 토큰 업데이트
         const tokenUpdateData: any = {
-          accessToken: encryptToken(tokenData.accessToken),
-          isActive: true // 🔧 중요: 재인증 시 계정 다시 활성화
+          accessToken: encryptToken(tokenData.accessToken)
         };
         
         if (tokenData.refreshToken) {
@@ -81,38 +73,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (tokenData.expiryDate) {
           tokenUpdateData.tokenExpiresAt = tokenData.expiryDate;
         }
-        if ((tokenData as any).picture) {
-          tokenUpdateData.profilePicture = (tokenData as any).picture;
-        }
         
         await storage.updateGoogleDriveAccount(existingAccount.id, tokenUpdateData);
-        
-        // OAuth 완료 페이지로 리다이렉트하여 메인 창에 완료 신호 전송
-        return res.send(`
-          <html>
-            <head><title>인증 완료</title></head>
-            <body>
-              <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
-                <h2>✅ 계정이 성공적으로 업데이트되었습니다</h2>
-                <p>이 창은 곧 자동으로 닫힙니다...</p>
-              </div>
-              <script>
-                // 메인 창에 OAuth 완료 신호 전송
-                if (window.opener) {
-                  window.opener.postMessage({ 
-                    type: 'google-oauth-complete', 
-                    action: 'updated',
-                    email: '${tokenData.email}'
-                  }, '*');
-                }
-                // 1초 후 창 닫기
-                setTimeout(() => {
-                  window.close();
-                }, 1000);
-              </script>
-            </body>
-          </html>
-        `);
+        return res.redirect(`/admin?success=${encodeURIComponent("계정이 성공적으로 업데이트되었습니다")}`);
       } else {
         // 새 계정 저장
         const accountData = {
@@ -128,33 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         await storage.createGoogleDriveAccount(accountData);
-        
-        // OAuth 완료 페이지로 리다이렉트하여 메인 창에 완료 신호 전송
-        return res.send(`
-          <html>
-            <head><title>인증 완료</title></head>
-            <body>
-              <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
-                <h2>✅ 구글 드라이브 계정이 성공적으로 추가되었습니다</h2>
-                <p>이 창은 곧 자동으로 닫힙니다...</p>
-              </div>
-              <script>
-                // 메인 창에 OAuth 완료 신호 전송
-                if (window.opener) {
-                  window.opener.postMessage({ 
-                    type: 'google-oauth-complete', 
-                    action: 'added',
-                    email: '${tokenData.email}'
-                  }, '*');
-                }
-                // 1초 후 창 닫기
-                setTimeout(() => {
-                  window.close();
-                }, 1000);
-              </script>
-            </body>
-          </html>
-        `);
+        return res.redirect(`/admin?success=${encodeURIComponent("구글 드라이브 계정이 성공적으로 추가되었습니다")}`);
       }
     } catch (error) {
       console.error("OAuth callback error:", error);
@@ -173,26 +110,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
-  // 세션 설정 - 서버리스 환경에서는 간소화된 방식 사용
-  if (!process.env.VERCEL) {
-    // Replit 환경: 일반적인 세션 사용
-    app.use(session({
-      secret: process.env.SESSION_SECRET || 'marucomsys-admin-session',
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: false, // Set to true if using HTTPS
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-      }
-    }));
-  } else {
-    // Vercel 서버리스: 기본 미들웨어만 사용 (상태 저장 X)
-    app.use((req, res, next) => {
-      // 서버리스 환경에서는 요청별 처리
-      (req as any).session = {};
-      next();
-    });
-  }
+  // Session middleware
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'marucomsys-admin-session',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true if using HTTPS
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
 
   // Admin authentication routes (must be before middleware)
   app.post("/api/admin/login", async (req, res) => {
@@ -227,122 +154,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/auth-status", async (req, res) => {
     try {
-      // 캐시 비활성화로 인증 상태 실시간 반영
-      res.set('Cache-Control', 'no-store');
       res.json({ authenticated: !!req.session.isAdmin });
     } catch (error) {
       console.error("Auth status check error:", error);
       res.status(500).send("인증 상태 확인 중 오류가 발생했습니다");
-    }
-  });
-
-  // 버전 확인 API
-  app.get("/api/version", async (req, res) => {
-    try {
-      res.json({ 
-        version: "1.1.0-fixed",
-        buildTime: new Date().toISOString(),
-        fixedIssues: ["React key collision", "Boolean tokenExpired handling"]
-      });
-    } catch (error) {
-      console.error("Version check error:", error);
-      res.status(500).send("버전 확인 중 오류가 발생했습니다");
-    }
-  });
-
-  // 🔍 OAuth Redirect URI 디버깅 엔드포인트
-  app.get("/api/debug/oauth-redirect-uri", async (req, res) => {
-    try {
-      const oauthManager = new GoogleDriveOAuthManager();
-      
-      // 실제 요청 없이 redirect URI 계산
-      const fallbackUri = (oauthManager as any).computeRedirectUri();
-      
-      // 현재 요청 기반으로 redirect URI 계산
-      const requestBasedUri = (oauthManager as any).computeRedirectUri(req);
-      
-      // 환경변수 상태
-      const envVars = {
-        GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || null,
-        VERCEL_URL: process.env.VERCEL_URL || null,
-        REPL_SLUG: process.env.REPL_SLUG || null,
-        REPL_OWNER: process.env.REPL_OWNER || null,
-        NODE_ENV: process.env.NODE_ENV || 'development'
-      };
-      
-      // 요청 헤더 정보
-      const requestInfo = {
-        protocol: req.protocol,
-        host: req.get('host'),
-        'x-forwarded-proto': req.headers['x-forwarded-proto'],
-        'x-forwarded-host': req.headers['x-forwarded-host'],
-        origin: req.headers.origin,
-        referer: req.headers.referer
-      };
-      
-      // 테스트 OAuth URL 생성
-      const testAuthUrl = oauthManager.generateAuthUrl('debug-test', req);
-      
-      res.json({
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
-        environmentVariables: envVars,
-        requestHeaders: requestInfo,
-        computedURIs: {
-          fallback: fallbackUri,
-          requestBased: requestBasedUri
-        },
-        testOAuthURL: testAuthUrl,
-        databaseUrl: process.env.DATABASE_URL ? 'SET (masked)' : 'NOT SET'
-      });
-    } catch (error) {
-      console.error("OAuth redirect URI debug error:", error);
-      res.status(500).json({ 
-        error: "디버깅 중 오류가 발생했습니다", 
-        details: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
-
-  // 배포환경 Secrets 확인 API (보안을 위해 존재 여부만 확인)
-  app.get("/api/env-check", async (req, res) => {
-    try {
-      const requiredEnvs = [
-        'ENCRYPTION_KEY',
-        'GOOGLE_CLIENT_ID', 
-        'GOOGLE_CLIENT_SECRET',
-        'GOOGLE_REDIRECT_URI',
-        'ADMIN_PASSWORD',
-        'DATABASE_URL'
-      ];
-      
-      const envStatus = requiredEnvs.reduce((acc, key) => {
-        acc[key] = !!process.env[key];
-        return acc;
-      }, {} as Record<string, boolean>);
-
-      // CLIENT_ID 앞부분만 안전하게 노출 (보안 목적)
-      const clientIdPrefix = process.env.GOOGLE_CLIENT_ID ? 
-        process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...' : 'N/A';
-      
-      // 현재 요청의 호스트 정보도 추가
-      const currentHost = req.get('host') || 'unknown';
-      const detectedEnvironment = currentHost.includes('replit.app') ? 'deployment' : 
-                                  currentHost.includes('localhost') ? 'development' :
-                                  'unknown';
-
-      res.json({ 
-        environment: process.env.NODE_ENV || 'development',
-        detectedEnvironment,
-        currentHost,
-        allSecretsPresent: Object.values(envStatus).every(Boolean),
-        secretsStatus: envStatus,
-        googleClientIdPrefix: clientIdPrefix,
-        googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || 'NOT SET'
-      });
-    } catch (error) {
-      console.error("Environment check error:", error);
-      res.status(500).send("환경변수 확인 중 오류가 발생했습니다");
     }
   });
 
@@ -437,11 +252,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🔍 기본 계정 조사 시작: ${primaryAccount.email}`);
       
       // 모든 파일 조회
+      const googleDriveFileManager = new GoogleDriveFileManager();
       const allFiles = await googleDriveFileManager.listFiles(primaryAccount.accessToken!, 200);
       console.log(`📂 전체 파일 수: ${allFiles.length}`);
       
       // MaruCS-Sync 폴더 찾기
-      const marucsSyncFolder = allFiles.find((file: any) => 
+      const marucsSyncFolder = allFiles.find(file => 
         file.name === 'MaruCS-Sync' && file.mimeType === 'application/vnd.google-apps.folder'
       );
       
@@ -463,10 +279,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // 하위 폴더들과 파일들 분류
-      const subFolders = folderContents.filter((item: any) => 
+      const subFolders = folderContents.filter(item => 
         item.mimeType === 'application/vnd.google-apps.folder'
       );
-      const files = folderContents.filter((item: any) => 
+      const files = folderContents.filter(item => 
         item.mimeType !== 'application/vnd.google-apps.folder'
       );
       
@@ -494,12 +310,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           console.log(`📁 ${folder.name} 폴더: ${subFolderContents.length}개 파일`);
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.log(`⚠️ ${folder.name} 폴더 조회 실패: ${errorMessage}`);
+          console.log(`⚠️ ${folder.name} 폴더 조회 실패: ${error.message}`);
           subFolderDetails.push({
             name: folder.name,
             id: folder.id,
-            error: errorMessage
+            error: error.message
           });
         }
       }
@@ -672,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 토큰 유효성 검사 및 갱신
       if (!defaultAccount.accessToken || !defaultAccount.tokenExpiresAt || 
-          new Date(defaultAccount.tokenExpiresAt || 0) <= new Date(Date.now() + 5 * 60 * 1000)) {
+          new Date(defaultAccount.tokenExpiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
         console.log(`🔄 토큰 갱신: ${defaultAccount.email}`);
         if (!defaultAccount.refreshToken) {
           return res.status(401).json({ error: "리프레시 토큰이 없습니다. 계정을 다시 연결해주세요." });
@@ -713,25 +528,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`⬆️  Google Drive 업로드 시작: ${fileName}`);
       
-      // 파일 업로드
-      const uploadResult = await googleDriveFileManager.uploadFile(
+      // 스트림을 사용한 업로드
+      const uploadResult = await googleDriveFileManager.uploadFileFromBuffer(
         defaultAccount.accessToken!,
-        file.buffer,
         fileName,
-        file.mimetype,
+        file.buffer,
         backupFolder.id!
       );
 
-      // Google Drive API는 성공 시 파일 객체를 반환하고, 실패 시 예외를 던집니다
-      console.log(`✅ 업로드 성공: ${fileName} -> ${uploadResult.webViewLink}`);
-      
-      res.json({
-        success: true,
-        fileName: fileName,
-        fileSize: fileSizeMB + 'MB',
-        driveLink: uploadResult.webViewLink,
-        message: `${fileName}이(가) 성공적으로 업로드되었습니다`
-      });
+      if (uploadResult.success) {
+        console.log(`✅ 업로드 성공: ${fileName} -> ${uploadResult.webViewLink}`);
+        
+        res.json({
+          success: true,
+          fileName: fileName,
+          fileSize: fileSizeMB + 'MB',
+          driveLink: uploadResult.webViewLink,
+          message: `${fileName}이(가) 성공적으로 업로드되었습니다`
+        });
+      } else {
+        throw new Error(uploadResult.error || '업로드 실패');
+      }
 
     } catch (error) {
       console.error("웹 백업 파일 업로드 오류:", error);
@@ -781,7 +598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!defaultAccount) {
         defaultAccount = accounts
           .filter(acc => acc.isActive)
-          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())[0];
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
         
         console.log(`⚠️ 기본 계정이 없어서 최신 활성 계정 사용: ${defaultAccount?.email}`);
       }
@@ -878,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileName,
         'application/octet-stream',
         fileStats.size,
-        backupFolder?.id || undefined
+        backupFolder?.id
       );
       
       console.log(`✅ 백업 파일 업로드 성공: ${fileName} → Google Drive`);
@@ -888,15 +705,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileName: fileName,
         fileSize: fileStats.size,
         webViewLink: uploadResult.webViewLink,
-        downloadLink: uploadResult.webContentLink || uploadResult.webViewLink
+        downloadLink: uploadResult.downloadLink
       });
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error("백업 파일 업로드 오류:", errorMessage);
+      console.error("백업 파일 업로드 오류:", error);
       res.status(500).json({ 
         error: "백업 파일 업로드 중 오류가 발생했습니다",
-        details: errorMessage 
+        details: error.message 
       });
     }
   });
@@ -1034,24 +850,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // MaruCS-Sync 하위 파일들 찾기
       const marucsFiles = files.filter(f => 
-        f.parents && marucsFolder.id && f.parents.includes(marucsFolder.id) &&
+        f.parents && f.parents.includes(marucsFolder.id) &&
         f.mimeType !== 'application/vnd.google-apps.folder'
       );
       
       // 서브폴더들과 그 하위 파일들 찾기
       const subfolders = files.filter(f => 
         f.mimeType === 'application/vnd.google-apps.folder' &&
-        f.parents && marucsFolder.id && f.parents.includes(marucsFolder.id)
+        f.parents && f.parents.includes(marucsFolder.id)
       );
       
-      const subfolderFiles: Record<string, any[]> = {};
+      const subfolderFiles = {};
       for (const folder of subfolders) {
-        if (!folder.id || !folder.name) continue;
         const folderFiles = files.filter(f => 
           f.parents && f.parents.includes(folder.id!) &&
           f.mimeType !== 'application/vnd.google-apps.folder'
         );
-        subfolderFiles[folder.name] = folderFiles.map(f => ({
+        subfolderFiles[folder.name!] = folderFiles.map(f => ({
           name: f.name,
           size: f.size,
           id: f.id
@@ -1071,8 +886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('파일 목록 확인 오류:', errorMessage);
+      console.error('파일 목록 확인 오류:', error);
       res.status(500).json({ error: "파일 목록 확인에 실패했습니다" });
     }
   });
@@ -1119,8 +933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`❌ 토큰 불일치 감지: DB(${account.email}) vs 실제(${actualUserInfo.email})`);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.log(`⚠️ 계정 검증 실패: ${errorMessage}`);
+        console.log(`⚠️ 계정 검증 실패: ${error.message}`);
       }
 
       // 🔧 MaruCS-Sync 폴더 구조 확인 및 업로드
@@ -1256,17 +1069,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // 파일 권한 정보 확인
           try {
-            if (!driveFile.id) throw new Error('File ID is null');
             const filePerms = await googleDriveFileManager.getFilePermissions(account.accessToken!, driveFile.id);
             console.log(`🔐 파일 권한 상태:`, filePerms);
           } catch (permError) {
-            const permErrorMessage = permError instanceof Error ? permError.message : 'Unknown error';
-            console.log(`⚠️ 권한 확인 실패:`, permErrorMessage);
+            console.log(`⚠️ 권한 확인 실패:`, permError.message);
           }
           
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.log(`⚠️ 폴더 내용 확인 실패:`, errorMessage);
+          console.log(`⚠️ 폴더 내용 확인 실패:`, error.message);
         }
       }
 
@@ -1296,8 +1106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.error(`❌ 백업 계정 토큰 불일치: DB(${backupAccount.email}) vs 실제(${actualUserInfo.email})`);
               }
             } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-              console.log(`⚠️ 백업 계정 검증 실패: ${errorMessage}`);
+              console.log(`⚠️ 백업 계정 검증 실패: ${error.message}`);
             }
             
             // 토큰 유효성 재확인
@@ -1341,15 +1150,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const backupFileName = req.file.originalname;
             console.log(`📤 ${backupAccount.email}: ${backupFileName} 업로드 시작 (${(req.file.size / 1024 / 1024).toFixed(2)}MB)`);
             
-            const parentFolderId = backupCategoryFolder?.id || backupMainFolder?.id;
-            if (!parentFolderId) throw new Error('No parent folder ID available');
-            
             const backupFile = await googleDriveFileManager.uploadFile(
               backupAccount.accessToken!,
               req.file.buffer,
               backupFileName,
               req.file.mimetype,
-              parentFolderId
+              backupCategoryFolder?.id || backupMainFolder?.id
             );
             
             if (backupFile?.id) {
@@ -1363,8 +1169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`✅ 백업 완료: ${backupFileName} → ${backupAccount.email}`);
             
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error(`❌ 백업 실패 (${backupAccount.email}):`, errorMessage);
+            console.error(`❌ 백업 실패 (${backupAccount.email}):`, error.message || error);
           }
         })
         ).catch(error => {
@@ -1577,37 +1382,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google Drive OAuth routes
   app.get("/api/auth/google/accounts", requireAdmin, async (req, res) => {
     try {
-      // 계정 상태는 자주 변경되므로 캐싱 비활성화
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      
       const accounts = await storage.getGoogleDriveAccounts();
-      const currentTime = new Date();
-      
       // 토큰 정보는 제외하고 안전한 정보만 전송
-      const safeAccounts = accounts.map(account => {
-        const tokenExpiryDate = account.tokenExpiresAt ? new Date(account.tokenExpiresAt) : null;
-        const isExpired = tokenExpiryDate ? tokenExpiryDate < currentTime : true;
-        
-        // 디버깅 로그
-        console.log(`🔍 Token Check - ${account.email}:`);
-        console.log(`  - Expires At (DB): ${account.tokenExpiresAt}`);
-        console.log(`  - Expires At (Date): ${tokenExpiryDate}`);
-        console.log(`  - Current Time: ${currentTime}`);
-        console.log(`  - Is Expired: ${isExpired}`);
-        
-        return {
-          id: account.id,
-          accountName: account.accountName,
-          email: account.email,
-          isActive: account.isActive,
-          isDefault: account.isDefault,
-          profilePicture: account.profilePicture,
-          createdAt: account.createdAt,
-          tokenExpired: isExpired
-        };
-      });
+      const safeAccounts = accounts.map(account => ({
+        id: account.id,
+        accountName: account.accountName,
+        email: account.email,
+        isActive: account.isActive,
+        isDefault: account.isDefault,
+        profilePicture: account.profilePicture,
+        createdAt: account.createdAt,
+        tokenExpired: account.tokenExpiresAt ? account.tokenExpiresAt < new Date() : true
+      }));
       res.json(safeAccounts);
     } catch (error) {
       console.error("Error fetching Google Drive accounts:", error);
@@ -1622,7 +1408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "계정 이름이 필요합니다" });
       }
       
-      const authUrl = googleDriveOAuth.generateAuthUrl(accountName, req);
+      const authUrl = googleDriveOAuth.generateAuthUrl(accountName);
       res.json({ authUrl });
     } catch (error) {
       console.error("Error generating auth URL:", error);
@@ -1646,7 +1432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 재인증 URL 생성 (계정 이름을 state로 사용)
-      const authUrl = googleDriveOAuth.generateAuthUrl(account.accountName, req);
+      const authUrl = googleDriveOAuth.generateAuthUrl(account.accountName);
       res.json({ authUrl });
     } catch (error) {
       console.error("Error generating reauth URL:", error);
@@ -2048,6 +1834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: `계정을 찾을 수 없습니다: ${email}` });
       }
 
+      const googleDriveFileManager = new GoogleDriveFileManager();
       const files = await googleDriveFileManager.listFiles(account.accessToken, 200);
       
       // MaruCS-Sync 폴더 및 하위 구조 분석
@@ -2056,8 +1843,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: email,
         totalFiles: files.length,
         marucsFolder: marucsFolder || null,
-        marucsSubfolders: [] as Array<{name: string | null | undefined, id: string | null | undefined}>,
-        marucsFiles: [] as Array<{name: string | null | undefined, size: string | null | undefined, id: string | null | undefined}>,
+        marucsSubfolders: [],
+        marucsFiles: [],
         rootFiles: files.filter(f => !f.parents || f.parents.length === 0).length
       };
 
@@ -2078,7 +1865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 각 서브폴더의 파일들도 확인
         for (const subfolder of report.marucsSubfolders) {
           const subfolderFiles = files.filter(f => 
-            f.parents && subfolder.id && f.parents.includes(subfolder.id)
+            f.parents && f.parents.includes(subfolder.id)
           );
           (subfolder as any).files = subfolderFiles.map(f => ({ 
             name: f.name, 
@@ -2479,7 +2266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`📂 ${targetAccount.email}에서 MaruCS-Sync 하위 폴더 ${marucsSubfolders.length}개 발견:`);
             for (const folder of marucsSubfolders) {
               console.log(`   📁 ${folder.name} (${folder.id})`);
-              if (folder.name && subFolderNames.includes(folder.name)) {
+              if (subFolderNames.includes(folder.name)) {
                 folderMap[folder.name] = folder.id;
               }
             }
@@ -2519,8 +2306,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`🔍 ${targetAccount.email}에서 MaruCS-Sync 전체 파일 ${allMarucsFiles.length}개 검사 중...`);
                 const existingFile = allMarucsFiles.find(f => f.name === sourceFile.name);
                 if (existingFile) {
-                  const parentFolderName = existingFile.parents && existingFile.parents.length > 0 ? 
-                    targetFiles.find(pf => pf.id === existingFile.parents![0])?.name || 'unknown' : 'root';
+                  const parentFolderName = existingFile.parents ? 
+                    targetFiles.find(pf => pf.id === existingFile.parents[0])?.name || 'unknown' : 'root';
                   
                   // ⭐ 파일이 루트에 있으면 적절한 서브폴더로 이동
                   if (parentFolderName === 'MaruCS-Sync') {
@@ -2588,7 +2375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const categoryFolderName = getFolderNameByCategory(download.category);
                 console.log(`   - 매핑된 폴더명: ${categoryFolderName}`);
                 console.log(`   - 폴더맵 키들:`, Object.keys(folderMap));
-                console.log(`   - 폴더맵[${categoryFolderName || 'null'}]: ${categoryFolderName ? folderMap[categoryFolderName] : 'undefined'}`);
+                console.log(`   - 폴더맵[${categoryFolderName}]: ${folderMap[categoryFolderName]}`);
                 
                 if (categoryFolderName && folderMap[categoryFolderName]) {
                   targetFolderId = folderMap[categoryFolderName];
@@ -2601,7 +2388,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`📤 업로드 시작: ${sourceFile.name} → ${targetFolderName} (${(fileBuffer.length / (1024 * 1024)).toFixed(2)}MB)`);
                 
                 // 타겟 계정의 카테고리 폴더에 직접 업로드 
-                if (!targetFolderId) throw new Error('Target folder ID is null');
                 const newFile = await googleDriveFileManager.uploadFile(
                     decryptedToken,
                     fileBuffer,
@@ -2821,13 +2607,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     setInterval(refreshAllTokens, 30 * 60 * 1000);
   };
   
-  // 스케줄러는 서버리스 환경에서는 비활성화 (setInterval 미지원)
-  if (!process.env.VERCEL) {
-    console.log('🕒 토큰 갱신 스케줄러 시작 (30분 간격)');
-    startTokenRefreshScheduler();
-  } else {
-    console.log('⏭️ 서버리스 환경: 토큰 갱신 스케줄러 비활성화 (온디맨드 방식 사용)');
-  }
+  // 스케줄러 시작
+  startTokenRefreshScheduler();
 
   const httpServer = createServer(app);
   return httpServer;

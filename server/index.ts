@@ -37,21 +37,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  try {
-    const server = await registerRoutes(app);
+  const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    console.error('Express error handler:', err);
-    
-    // Special handling for database connection errors
-    if (err.code === '57P01' || err.message?.includes('terminating connection')) {
-      console.log('Database connection terminated, attempting to continue...');
-    }
-    
-    return res.status(status).json({ message });
+    res.status(status).json({ message });
+    throw err;
   });
 
   // 환경 변수 디버깅
@@ -68,43 +61,19 @@ app.use((req, res, next) => {
     await setupVite(app, server);
   } else {
     console.log("🟢 Setting up static serving for production");
-    // 서버리스에서는 정적 파일 제공 건너뛰기 (파일 시스템 접근 문제)
-    if (!process.env.VERCEL) {
-      serveStatic(app);
-    } else {
-      console.log("⏭️ 서버리스 환경: 정적 파일 제공 건너뛰기");
-      // 서버리스에서는 간단한 fallback 라우트만 제공
-      app.use("*", (_req, res) => {
-        res.status(200).send('<!DOCTYPE html><html><head><title>MaruComSys</title></head><body><h1>MaruComSys - 서버리스 모드</h1><p>API가 준비되었습니다.</p></body></html>');
-      });
-    }
+    serveStatic(app);
   }
 
-  // 서버리스 환경에서는 server.listen() 호출하지 않음
-  if (!process.env.VERCEL) {
-    // Replit 환경: 일반적인 서버 시작
-    const port = parseInt(process.env.PORT || '5000', 10);
-    server.listen({
-      port,
-      host: "0.0.0.0", // 외부 접근 허용
-      reusePort: true,
-    }, () => {
-      log(`serving on port ${port} (host: 0.0.0.0)`);
-    });
-  } else {
-    // Vercel 서버리스: 앱만 준비, listen 안 함
-    console.log('🚀 Vercel 서버리스 환경: 앱 준비 완료');
-  }
-  } catch (error) {
-    console.error('🚨 서버 시작 중 오류:', error);
-    // 서버리스에서는 오류가 발생해도 앱은 export되어야 함
-    if (process.env.VERCEL) {
-      console.log('⚠️ 서버리스 환경에서 오류 발생, 기본 앱으로 fallback');
-    } else {
-      throw error; // Replit에서는 오류를 그대로 throw
-    }
-  }
+  // ALWAYS serve the app on the port specified in the environment variable PORT
+  // Other ports are firewalled. Default to 5000 if not specified.
+  // this serves both the API and the client.
+  // It is the only port that is not firewalled.
+  const port = parseInt(process.env.PORT || '5000', 10);
+  server.listen({
+    port,
+    host: "0.0.0.0", // 외부 접근 허용
+    reusePort: true,
+  }, () => {
+    log(`serving on port ${port} (host: 0.0.0.0)`);
+  });
 })();
-
-// Vercel 서버리스를 위한 export
-export default app;

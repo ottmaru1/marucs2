@@ -63,8 +63,8 @@ export function decryptToken(encryptedText: string | object): string {
     }
   } catch (error) {
     console.error('Token decryption failed:', error);
-    // 복호화 실패 시 빈 문자열 반환 (명확한 에러 상태)
-    return '';
+    // 복호화 실패 시 원본 텍스트 반환 (평문 토큰일 가능성)
+    return typeof encryptedText === 'string' ? encryptedText : '';
   }
 }
 
@@ -74,11 +74,16 @@ export function decryptToken(encryptedText: string | object): string {
 export class GoogleDriveOAuthManager {
   private clientId: string;
   private clientSecret: string;
+  private redirectUri: string;
   private scopes: string[];
 
   constructor() {
     this.clientId = process.env.GOOGLE_CLIENT_ID || '';
     this.clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+    // 현재 실제 작동하는 Replit 도메인 강제 사용
+    const currentWorkingDomain = 'https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback';
+    
+    this.redirectUri = process.env.GOOGLE_REDIRECT_URI || currentWorkingDomain;
     this.scopes = [
       'https://www.googleapis.com/auth/drive.file', // 앱이 생성한 파일만 접근
       'https://www.googleapis.com/auth/userinfo.profile',
@@ -87,161 +92,40 @@ export class GoogleDriveOAuthManager {
   }
 
   /**
-   * 요청 기반으로 동적 리디렉션 URI 생성 (개선된 버전)
+   * OAuth 인증 URL 생성
    */
-  private computeRedirectUri(req?: any): string {
-    console.log("\n🔍 === REDIRECT URI 계산 시작 (개선된 버전) ===");
-    
-    // 환경변수 상태 로깅
-    console.log("환경변수 GOOGLE_REDIRECT_URI:", process.env.GOOGLE_REDIRECT_URI || 'undefined');
-    console.log("환경변수 VERCEL_URL:", process.env.VERCEL_URL || 'undefined');
-    console.log("환경변수 REPL_SLUG:", process.env.REPL_SLUG || 'undefined');
-    console.log("환경변수 REPL_OWNER:", process.env.REPL_OWNER || 'undefined');
-    console.log("환경변수 NODE_ENV:", process.env.NODE_ENV || 'undefined');
-    
-    // 요청에서 현재 호스트 감지
-    let currentHost = null;
-    let detectedEnvironment = 'unknown';
-    
-    if (req) {
-      // 요청 헤더에서 호스트 정보 추출
-      currentHost = req.headers['x-forwarded-host'] || req.get('host');
-      console.log("요청에서 감지된 호스트:", currentHost);
-      
-      // 호스트 기반으로 환경 감지
-      if (currentHost) {
-        if (currentHost.includes('marucs2.replit.app')) {
-          detectedEnvironment = 'deployment';
-        } else if (currentHost.includes('.replit.dev') || currentHost.includes('localhost')) {
-          detectedEnvironment = 'development';
-        }
-      }
-    }
-    
-    console.log("감지된 환경:", detectedEnvironment);
-    
-    // 대안 1: 요청 기반 동적 계산 (가장 정확)
-    if (req && currentHost) {
-      const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-      const computedUri = `${proto}://${currentHost}/api/auth/google/callback`;
-      
-      console.log("요청 헤더 정보:");
-      console.log("  - x-forwarded-proto:", req.headers['x-forwarded-proto'] || 'undefined');
-      console.log("  - protocol:", req.protocol || 'undefined');
-      console.log("  - x-forwarded-host:", req.headers['x-forwarded-host'] || 'undefined');
-      console.log("  - host:", req.get('host') || 'undefined');
-      console.log("  - 계산된 proto:", proto);
-      console.log("  - 계산된 host:", currentHost);
-      console.log("🔄 요청 기반 계산된 URI:", computedUri);
-      console.log("🔍 === REDIRECT URI 계산 완료 ===\n");
-      return computedUri;
-    }
-
-    // 대안 2: 환경 변수 사용 (단, 개발 환경에서는 주의)
-    if (process.env.GOOGLE_REDIRECT_URI) {
-      const envUri = process.env.GOOGLE_REDIRECT_URI;
-      
-      // 개발 환경에서 또는 동적 감지로 확인된 환경과 매치 여부 확인
-      if (detectedEnvironment === 'deployment' && !envUri.includes('marucs2.replit.app')) {
-        console.log("⚠️  경고: 배포 환경이지만 환경변수가 배포 URL을 가리키지 않음");
-        console.log("  현재 환경변수:", envUri);
-        console.log("  예상 배포 URI: https://marucs2.replit.app/api/auth/google/callback");
-      } else if (detectedEnvironment === 'development' && envUri.includes('marucs2.replit.app')) {
-        console.log("⚠️  경고: 개발 환경이지만 환경변수가 배포 URL을 가리킴");
-        console.log("  현재 환경변수:", envUri);
-      }
-      
-      console.log("✅ 환경변수 GOOGLE_REDIRECT_URI 사용:", envUri);
-      console.log("🔍 === REDIRECT URI 계산 완료 ===\n");
-      return envUri;
-    }
-    
-    // 대안 3: 폴백 - 환경변수 기반 추측
-    let fallbackHost;
-    if (detectedEnvironment === 'deployment') {
-      fallbackHost = 'marucs2.replit.app';
-    } else {
-      // 개발 환경을 위한 폴백
-      fallbackHost = process.env.VERCEL_URL 
-        ? process.env.VERCEL_URL
-        : process.env.REPL_SLUG 
-        ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-        : 'localhost:5000';
-    }
-    
-    const protocol = fallbackHost.includes('localhost') ? 'http' : 'https';
-    const fallbackUri = `${protocol}://${fallbackHost}/api/auth/google/callback`;
-    
-    console.log("⚠️  폴백 URI 사용 (감지된 환경:", detectedEnvironment + "):", fallbackUri);
-    console.log("🔍 === REDIRECT URI 계산 완료 ===\n");
-    return fallbackUri;
-  }
-
-  /**
-   * OAuth 인증 URL 생성 (요청 기반 동적 URI)
-   */
-  generateAuthUrl(accountName: string, req?: any): string {
-    const redirectUri = this.computeRedirectUri(req);
-    
-    console.log("\n🚀 === OAuth URL 생성 시작 ===");
+  generateAuthUrl(accountName: string): string {
+    console.log("=== OAuth URL 생성 ===");
     console.log("Client ID:", this.clientId?.substring(0, 20) + "...");
-    console.log("Redirect URI (최종):", redirectUri);
+    console.log("Redirect URI:", this.redirectUri);
     console.log("Account Name:", accountName);
-    console.log("Environment:", process.env.NODE_ENV || 'development');
     
     const oauth2Client = new OAuth2Client(
       this.clientId,
       this.clientSecret,
-      redirectUri
+      this.redirectUri
     );
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline', // 리프레시 토큰 받기 위해
       scope: this.scopes,
       state: accountName, // 계정 이름을 state로 전달
-      prompt: 'consent', // 매번 consent 화면 표시 (리프레시 토큰 보장)
-      include_granted_scopes: true // 기존 권한 포함
+      prompt: 'consent' // 매번 consent 화면 표시 (리프레시 토큰 보장)
     });
     
-    console.log("\n📝 Generated Auth URL:", authUrl);
-    
-    // URL에서 redirect_uri 파라미터 추출하여 확인
-    try {
-      const urlObj = new URL(authUrl);
-      const actualRedirectUri = urlObj.searchParams.get('redirect_uri');
-      console.log("🔍 URL 내 실제 redirect_uri 파라미터:", actualRedirectUri);
-      
-      if (actualRedirectUri !== redirectUri) {
-        console.error("❌ MISMATCH: 설정한 URI와 실제 URI가 다릅니다!");
-        console.error("  설정한 URI:", redirectUri);
-        console.error("  실제 URI:", actualRedirectUri);
-      } else {
-        console.log("✅ URI 일치 확인됨");
-      }
-    } catch (error) {
-      console.error("URL 파싱 오류:", error);
-    }
-    
-    console.log("🚀 === OAuth URL 생성 완료 ===\n");
+    console.log("Generated Auth URL:", authUrl);
+    console.log("======================");
     return authUrl;
   }
 
   /**
-   * 인증 코드로 토큰 교환 (요청 기반 동적 URI)
+   * 인증 코드로 토큰 교환
    */
-  async exchangeCodeForTokens(code: string, accountName: string, req?: any) {
-    const redirectUri = this.computeRedirectUri(req);
-    
-    console.log("\n🔄 === 토큰 교환 시작 ===");
-    console.log("Code (앞 10자):", code.substring(0, 10) + "...");
-    console.log("Account Name:", accountName);
-    console.log("Exchange용 Redirect URI:", redirectUri);
-    console.log("Environment:", process.env.NODE_ENV || 'development');
-    
+  async exchangeCodeForTokens(code: string, accountName: string) {
     const oauth2Client = new OAuth2Client(
       this.clientId,
       this.clientSecret,
-      redirectUri
+      this.redirectUri
     );
 
     try {
@@ -270,11 +154,11 @@ export class GoogleDriveOAuthManager {
   /**
    * 리프레시 토큰을 이용한 액세스 토큰 갱신
    */
-  async refreshAccessToken(refreshToken: string, req?: any) {
-    // 토큰 갱신에는 redirect URI가 필요하지 않으므로 생략
+  async refreshAccessToken(refreshToken: string) {
     const oauth2Client = new OAuth2Client(
       this.clientId,
-      this.clientSecret
+      this.clientSecret,
+      this.redirectUri
     );
 
     try {
