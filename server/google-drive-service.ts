@@ -80,15 +80,45 @@ export class GoogleDriveOAuthManager {
   constructor() {
     this.clientId = process.env.GOOGLE_CLIENT_ID || '';
     this.clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
-    // 현재 실제 작동하는 Replit 도메인 강제 사용
-    const currentWorkingDomain = 'https://258c0df6-4caa-4bc6-ad62-93cc7a44effb-00-2dmqihs3x26jc.spock.replit.dev/api/auth/google/callback';
     
-    this.redirectUri = process.env.GOOGLE_REDIRECT_URI || currentWorkingDomain;
+    // 환경별 동적 redirect URI 설정
+    this.redirectUri = this.getRedirectUri();
     this.scopes = [
       'https://www.googleapis.com/auth/drive.file', // 앱이 생성한 파일만 접근
       'https://www.googleapis.com/auth/userinfo.profile',
       'https://www.googleapis.com/auth/userinfo.email'
     ];
+  }
+
+  /**
+   * 환경에 따른 동적 redirect URI 생성
+   */
+  private getRedirectUri(): string {
+    // 1. 환경변수가 설정되어 있으면 우선 사용
+    if (process.env.GOOGLE_REDIRECT_URI) {
+      console.log('🔧 Using configured GOOGLE_REDIRECT_URI:', process.env.GOOGLE_REDIRECT_URI);
+      return process.env.GOOGLE_REDIRECT_URI;
+    }
+
+    // 2. 배포 환경 감지 (REPLIT_DEPLOYMENT=1)
+    if (process.env.REPLIT_DEPLOYMENT === '1') {
+      const productionUri = 'https://marucs2.replit.app/api/auth/google/callback';
+      console.log('🚀 Production environment detected, using:', productionUri);
+      return productionUri;
+    }
+
+    // 3. 개발 환경 - Replit 도메인 자동 감지
+    const devDomain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS;
+    if (devDomain) {
+      const developmentUri = `https://${devDomain}/api/auth/google/callback`;
+      console.log('🛠️  Development environment detected, using:', developmentUri);
+      return developmentUri;
+    }
+
+    // 4. 폴백 - 현재 작동 중인 개발 도메인
+    const fallbackUri = 'https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/api/auth/google/callback';
+    console.log('⚠️  Fallback to current working domain:', fallbackUri);
+    return fallbackUri;
   }
 
   /**
