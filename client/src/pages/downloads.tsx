@@ -74,79 +74,18 @@ export default function Downloads() {
 
 
   const handleDownload = async (download: DownloadType) => {
-    // 이미 다운로드 중인 파일은 중복 실행 방지
-    if (downloadingFiles.has(download.id)) {
-      return;
-    }
+    // 다운로드 카운트 증가
+    incrementMutation.mutate(download.id);
+  };
 
-    // 다운로드 진행 상태 시작
-    setDownloadingFiles(prev => new Set(prev).add(download.id));
-    
-    try {
-      // 다운로드 카운트 증가
-      incrementMutation.mutate(download.id);
-      
-      // Google Drive 파일의 경우 서버 처리 시간 안내
-      if (download.googleDriveFileId) {
-        toast({
-          title: "다운로드 시작",
-          description: `${download.fileName} 파일을 준비 중입니다. 잠시만 기다려 주세요...`,
-          variant: "default"
-        });
-      } else {
-        toast({
-          title: "다운로드 시작",
-          description: `${download.fileName} 다운로드를 시작합니다.`,
-          variant: "default"
-        });
-      }
-      
-      // 브라우저 다운로드 다이얼로그를 위한 top-level navigation
-      let downloadUrl: string;
-      
-      if (download.googleDriveFileId) {
-        // Google Drive 파일은 API를 통해 다운로드
-        downloadUrl = `/api/downloads/${download.id}/download`;
-      } else {
-        // 로컬 파일은 직접 다운로드
-        downloadUrl = download.downloadUrl;
-      }
-      
-      // 원래 방식으로 복원 - 간단한 링크 클릭
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = download.fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Google Drive 파일의 경우 추가 안내
-      if (download.googleDriveFileId) {
-        setTimeout(() => {
-          toast({
-            title: "다운로드 진행 중",
-            description: "대용량 파일의 경우 1-2분 정도 소요될 수 있습니다.",
-            variant: "default"
-          });
-        }, 3000);
-      }
-
-    } catch (error) {
-      console.error('다운로드 오류:', error);
-      toast({
-        title: "다운로드 실패",
-        description: "파일 다운로드 중 오류가 발생했습니다. 다시 시도해주세요.",
-        variant: "destructive"
-      });
-    } finally {
-      // 다운로드 상태 해제 (5초 후)
-      setTimeout(() => {
-        setDownloadingFiles(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(download.id);
-          return newSet;
-        });
-      }, 5000);
+  // 다운로드 URL 생성 함수
+  const getDownloadUrl = (download: DownloadType): string => {
+    if (download.googleDriveFileId) {
+      // Google Drive 파일은 API를 통해 다운로드
+      return `/api/downloads/${download.id}/download`;
+    } else {
+      // 로컬 파일은 직접 다운로드
+      return download.downloadUrl;
     }
   };
 
@@ -319,23 +258,20 @@ export default function Downloads() {
                           </div>
 
                           <Button
-                            onClick={() => handleDownload(download)}
-                            disabled={incrementMutation.isPending || downloadingFiles.has(download.id)}
+                            asChild
                             className="w-full transition-all duration-300"
                             style={getCategoryButtonStyle(download.category)}
                             data-testid={`button-download-${download.id}`}
                           >
-                            {downloadingFiles.has(download.id) ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                다운로드 준비 중...
-                              </>
-                            ) : (
-                              <>
-                                <FileDown className="h-4 w-4 mr-2" />
-                                다운로드
-                              </>
-                            )}
+                            <a
+                              href={getDownloadUrl(download)}
+                              onClick={() => handleDownload(download)}
+                              className="flex items-center justify-center"
+                              target="_self"
+                            >
+                              <FileDown className="h-4 w-4 mr-2" />
+                              다운로드
+                            </a>
                           </Button>
                         </CardContent>
                       </Card>
