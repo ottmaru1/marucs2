@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Download, 
   FileText, 
@@ -12,7 +14,8 @@ import {
   HardDrive,
   Calendar,
   FileDown,
-  Eye
+  Eye,
+  Loader2
 } from "lucide-react";
 import type { Download as DownloadType } from "@shared/schema";
 
@@ -42,6 +45,10 @@ const categoryLabels = {
 
 export default function Downloads() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  // 다운로드 진행 상태 관리
+  const [downloadingFiles, setDownloadingFiles] = useState<Set<string>>(new Set());
 
   // Fetch downloads from API
   const { data: downloads = [], isLoading } = useQuery<DownloadType[]>({
@@ -66,25 +73,79 @@ export default function Downloads() {
 
 
 
-  const handleDownload = (download: DownloadType) => {
-    incrementMutation.mutate(download.id);
-    
-    // 통일된 다운로드 방식 - 새창 없이 직접 다운로드
-    const link = document.createElement('a');
-    
-    if (download.googleDriveFileId) {
-      // Google Drive 파일은 API를 통해 다운로드
-      link.href = `/api/downloads/${download.id}/download`;
-    } else {
-      // 로컬 파일은 직접 다운로드
-      link.href = download.downloadUrl;
+  const handleDownload = async (download: DownloadType) => {
+    // 이미 다운로드 중인 파일은 중복 실행 방지
+    if (downloadingFiles.has(download.id)) {
+      return;
     }
+
+    // 다운로드 진행 상태 시작
+    setDownloadingFiles(prev => new Set(prev).add(download.id));
     
-    link.download = download.fileName;
-    link.target = '_self'; // 현재 창에서 다운로드
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // 다운로드 카운트 증가
+      incrementMutation.mutate(download.id);
+      
+      // Google Drive 파일의 경우 서버 처리 시간 안내
+      if (download.googleDriveFileId) {
+        toast({
+          title: "다운로드 시작",
+          description: `${download.fileName} 파일을 준비 중입니다. 잠시만 기다려 주세요...`,
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "다운로드 시작",
+          description: `${download.fileName} 다운로드를 시작합니다.`,
+          variant: "default"
+        });
+      }
+      
+      // 다운로드 링크 생성 및 실행
+      const link = document.createElement('a');
+      
+      if (download.googleDriveFileId) {
+        // Google Drive 파일은 API를 통해 다운로드
+        link.href = `/api/downloads/${download.id}/download`;
+      } else {
+        // 로컬 파일은 직접 다운로드
+        link.href = download.downloadUrl;
+      }
+      
+      link.download = download.fileName;
+      link.target = '_self';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Google Drive 파일의 경우 추가 안내
+      if (download.googleDriveFileId) {
+        setTimeout(() => {
+          toast({
+            title: "다운로드 진행 중",
+            description: "대용량 파일의 경우 1-2분 정도 소요될 수 있습니다.",
+            variant: "default"
+          });
+        }, 3000);
+      }
+
+    } catch (error) {
+      console.error('다운로드 오류:', error);
+      toast({
+        title: "다운로드 실패",
+        description: "파일 다운로드 중 오류가 발생했습니다. 다시 시도해주세요.",
+        variant: "destructive"
+      });
+    } finally {
+      // 다운로드 상태 해제 (5초 후)
+      setTimeout(() => {
+        setDownloadingFiles(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(download.id);
+          return newSet;
+        });
+      }, 5000);
+    }
   };
 
 
@@ -257,13 +318,22 @@ export default function Downloads() {
 
                           <Button
                             onClick={() => handleDownload(download)}
-                            disabled={incrementMutation.isPending}
+                            disabled={incrementMutation.isPending || downloadingFiles.has(download.id)}
                             className="w-full transition-all duration-300"
                             style={getCategoryButtonStyle(download.category)}
                             data-testid={`button-download-${download.id}`}
                           >
-                            <FileDown className="h-4 w-4 mr-2" />
-                            다운로드
+                            {downloadingFiles.has(download.id) ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                다운로드 준비 중...
+                              </>
+                            ) : (
+                              <>
+                                <FileDown className="h-4 w-4 mr-2" />
+                                다운로드
+                              </>
+                            )}
                           </Button>
                         </CardContent>
                       </Card>
