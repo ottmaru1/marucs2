@@ -101,7 +101,7 @@ export default function Downloads() {
         });
       }
       
-      // 브라우저 다이얼로그를 위한 새 탭 열기
+      // 브라우저 다이얼로그를 위한 현재 탭에서 열기
       let downloadUrl: string;
       
       if (download.googleDriveFileId) {
@@ -112,8 +112,8 @@ export default function Downloads() {
         downloadUrl = download.downloadUrl;
       }
       
-      // 새 탭에서 열어서 브라우저가 저장/열기 다이얼로그 표시하도록 함
-      window.open(downloadUrl, '_blank');
+      // 현재 탭에서 열어서 브라우저가 저장/열기 다이얼로그 표시하도록 함
+      window.location.href = downloadUrl;
 
       // Google Drive 파일의 경우 추가 안내
       if (download.googleDriveFileId) {
