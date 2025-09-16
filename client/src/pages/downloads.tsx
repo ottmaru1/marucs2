@@ -78,15 +78,10 @@ export default function Downloads() {
     incrementMutation.mutate(download.id);
   };
 
-  // 다운로드 URL 생성 함수
+  // 다운로드 URL 생성 함수 - 모든 파일을 API를 통해 처리
   const getDownloadUrl = (download: DownloadType): string => {
-    if (download.googleDriveFileId) {
-      // Google Drive 파일은 API를 통해 다운로드
-      return `/api/downloads/${download.id}/download`;
-    } else {
-      // 로컬 파일은 직접 다운로드
-      return download.downloadUrl;
-    }
+    // 모든 파일 (로컬 + Google Drive)을 API 엔드포인트로 통일
+    return `/api/downloads/${download.id}/download`;
   };
 
 
