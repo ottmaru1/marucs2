@@ -112,8 +112,14 @@ export default function Downloads() {
         downloadUrl = download.downloadUrl;
       }
       
-      // Top-level navigation으로 브라우저 다운로드 다이얼로그 트리거
-      window.location.assign(downloadUrl);
+      // 임시 링크 엘리먼트로 브라우저 다운로드 다이얼로그 트리거
+      const tempLink = document.createElement('a');
+      tempLink.href = downloadUrl;
+      tempLink.target = '_self';  // 현재 창에서 열기 (iframe 방지)
+      tempLink.style.display = 'none';
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
 
       // Google Drive 파일의 경우 추가 안내
       if (download.googleDriveFileId) {
