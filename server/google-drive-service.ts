@@ -94,20 +94,24 @@ export class GoogleDriveOAuthManager {
    * 환경에 따른 동적 redirect URI 생성
    */
   private getRedirectUri(): string {
-    // 1. 환경변수가 설정되어 있으면 우선 사용
-    if (process.env.GOOGLE_REDIRECT_URI) {
-      console.log('🔧 Using configured GOOGLE_REDIRECT_URI:', process.env.GOOGLE_REDIRECT_URI);
-      return process.env.GOOGLE_REDIRECT_URI;
-    }
+    console.log('🔍 Environment Detection:');
+    console.log('  - REPLIT_DEPLOYMENT:', process.env.REPLIT_DEPLOYMENT);
+    console.log('  - REPLIT_DEV_DOMAIN:', process.env.REPLIT_DEV_DOMAIN);
+    console.log('  - GOOGLE_REDIRECT_URI:', process.env.GOOGLE_REDIRECT_URI ? 'SET' : 'NOT SET');
+    console.log('  - NODE_ENV:', process.env.NODE_ENV);
 
-    // 2. 배포 환경 감지 (REPLIT_DEPLOYMENT=1)
-    if (process.env.REPLIT_DEPLOYMENT === '1') {
+    // 1. 배포 환경 감지 - 여러 방법으로 확인
+    const isProduction = process.env.REPLIT_DEPLOYMENT === '1' || 
+                        process.env.NODE_ENV === 'production' ||
+                        process.env.GOOGLE_REDIRECT_URI?.includes('marucs2.replit.app');
+    
+    if (isProduction) {
       const productionUri = 'https://marucs2.replit.app/api/auth/google/callback';
       console.log('🚀 Production environment detected, using:', productionUri);
       return productionUri;
     }
 
-    // 3. 개발 환경 - Replit 도메인 자동 감지
+    // 2. 개발 환경 - 현재 도메인 자동 감지
     const devDomain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS;
     if (devDomain) {
       const developmentUri = `https://${devDomain}/api/auth/google/callback`;
@@ -115,7 +119,13 @@ export class GoogleDriveOAuthManager {
       return developmentUri;
     }
 
-    // 4. 폴백 - 현재 작동 중인 개발 도메인
+    // 3. 환경변수가 설정되어 있으면 사용 (폴백)
+    if (process.env.GOOGLE_REDIRECT_URI) {
+      console.log('🔧 Using configured GOOGLE_REDIRECT_URI:', process.env.GOOGLE_REDIRECT_URI);
+      return process.env.GOOGLE_REDIRECT_URI;
+    }
+
+    // 4. 최후 폴백 - 현재 작동 중인 개발 도메인
     const fallbackUri = 'https://59d69701-efe5-41fe-9448-ddba244f8062-00-2e0hqi1dcvrjc.worf.replit.dev/api/auth/google/callback';
     console.log('⚠️  Fallback to current working domain:', fallbackUri);
     return fallbackUri;
