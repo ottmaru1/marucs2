@@ -112,8 +112,13 @@ export default function Downloads() {
         downloadUrl = download.downloadUrl;
       }
       
-      // 브라우저 네이티브 다운로드 다이얼로그 - top-level navigation
-      window.location.href = downloadUrl;
+      // 원래 방식으로 복원 - 간단한 링크 클릭
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = download.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       // Google Drive 파일의 경우 추가 안내
       if (download.googleDriveFileId) {

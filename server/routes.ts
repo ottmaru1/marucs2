@@ -2074,9 +2074,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             account
           );
           
-          // 응답 헤더 설정 - 브라우저 다이얼로그 허용 (inline 사용)
-          res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(download.fileName)}`);
-          res.setHeader('Content-Type', download.fileType || 'application/zip');
+          // 응답 헤더 설정 - 브라우저 다운로드 다이얼로그
+          res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(download.fileName)}"`);
+          res.setHeader('Content-Type', download.fileType || 'application/octet-stream');
           
           // 파일 스트림을 클라이언트로 전송
           fileStream.pipe(res);
@@ -2103,9 +2103,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   console.log(`✅ 백업 파일 발견: ${matchingFile.name} (${account.email})`);
                   const backupStream = await googleDriveFileManager.downloadFile(account.accessToken!, matchingFile.id!);
                   
-                  // 응답 헤더 설정 - 브라우저 다이얼로그 허용 (inline 사용)
-                  res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(download.fileName)}`);
-                  res.setHeader('Content-Type', download.fileType || 'application/zip');
+                  // 응답 헤더 설정 - 브라우저 다운로드 다이얼로그
+                  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(download.fileName)}"`);
+                  res.setHeader('Content-Type', download.fileType || 'application/octet-stream');
                   
                   // 백업 파일 스트림을 클라이언트로 전송
                   backupStream.pipe(res);
@@ -2132,8 +2132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filePath = path.join(process.cwd(), download.downloadUrl);
       if (fs.existsSync(filePath)) {
         console.log(`📁 로컬 파일 다운로드: ${download.fileName}`);
-        // 브라우저 다이얼로그를 위한 헤더 설정 (inline 사용)
-        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(download.fileName)}`);
+        // 브라우저 다운로드 다이얼로그를 위한 헤더 설정
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(download.fileName)}"`);
         res.setHeader('Content-Type', download.fileType || 'application/octet-stream');
         return res.sendFile(path.resolve(filePath));
       }
