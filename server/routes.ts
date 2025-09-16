@@ -1523,18 +1523,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentDefault = accounts.find(acc => acc.isDefault);
       
       if (currentDefault && currentDefault.id !== id && force !== 'true') {
-        // 동기화 필요 경고
+        // 동기화 상태 확인
         const downloads = await storage.getDownloads();
-        const defaultAccountFiles = downloads.filter(d => d.googleDriveAccountId === currentDefault.id).length;
+        const defaultAccountFiles = downloads.filter(d => d.googleDriveAccountId === currentDefault.id);
         
-        return res.status(409).json({ 
-          error: "기본 계정 변경 전 동기화가 필요합니다",
-          needsSync: true,
-          currentDefault: currentDefault.email,
-          newDefault: account.email,
-          fileCount: defaultAccountFiles,
-          message: `현재 기본 계정 ${currentDefault.email}에 ${defaultAccountFiles}개 파일이 있습니다. 동기화 후 변경하거나 강제 변경하시겠습니까?`
-        });
+        if (defaultAccountFiles.length > 0) {
+          // 활성 계정 확인
+          const activeAccounts = accounts.filter(acc => acc.isActive && acc.id !== currentDefault.id);
+          
+          if (activeAccounts.length === 0) {
+            // 활성 계정이 없으면 강제 변경만 허용
+            return res.status(409).json({ 
+              error: "기본 계정 변경 전 동기화가 필요합니다",
+              needsSync: true,
+              currentDefault: currentDefault.email,
+              newDefault: account.email,
+              fileCount: defaultAccountFiles.length,
+              message: `현재 기본 계정 ${currentDefault.email}에 ${defaultAccountFiles.length}개 파일이 있지만 활성 계정이 없습니다. 강제 변경하시겠습니까?`
+            });
+          }
+          
+          // 동기화 상태 검증: 다른 활성 계정들에도 같은 파일들이 있는지 확인
+          let syncedFiles = 0;
+          for (const file of defaultAccountFiles) {
+            const otherAccountsWithFile = downloads.filter(d => 
+              d.fileName === file.fileName && 
+              d.category === file.category &&
+              activeAccounts.some(acc => acc.id === d.googleDriveAccountId)
+            );
+            
+            if (otherAccountsWithFile.length >= activeAccounts.length) {
+              syncedFiles++;
+            }
+          }
+          
+          const syncRatio = syncedFiles / defaultAccountFiles.length;
+          
+          // 90% 이상 동기화되었으면 허용, 그렇지 않으면 동기화 권장
+          if (syncRatio < 0.9) {
+            const unsyncedFiles = defaultAccountFiles.length - syncedFiles;
+            return res.status(409).json({ 
+              error: "기본 계정 변경 전 동기화가 필요합니다",
+              needsSync: true,
+              currentDefault: currentDefault.email,
+              newDefault: account.email,
+              fileCount: defaultAccountFiles.length,
+              syncedFiles,
+              unsyncedFiles,
+              syncRatio: Math.round(syncRatio * 100),
+              message: `현재 기본 계정 ${currentDefault.email}의 ${defaultAccountFiles.length}개 파일 중 ${unsyncedFiles}개가 다른 계정에 동기화되지 않았습니다. (동기화율: ${Math.round(syncRatio * 100)}%) 동기화 후 변경하거나 강제 변경하시겠습니까?`
+            });
+          }
+        }
       }
 
       // 기본 계정 설정
