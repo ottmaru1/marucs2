@@ -4,6 +4,41 @@ import PrivacyPolicyDialog from "@/components/legal/privacy-policy-dialog";
 import TermsOfServiceDialog from "@/components/legal/terms-of-service-dialog";
 
 export default function Footer() {
+  // 페이지 상단으로 스크롤하는 함수 (데스크톱/모바일 호환)
+  const scrollToTop = () => {
+    // 여러 브라우저 호환성을 위한 다중 시도
+    const scrollToTopOptions = { top: 0, left: 0, behavior: 'smooth' as ScrollBehavior };
+    
+    // 1차 시도: window.scrollTo (가장 안정적)
+    if ('scrollTo' in window) {
+      window.scrollTo(scrollToTopOptions);
+    }
+    
+    // 2차 시도: document.documentElement.scrollTop (IE 호환)
+    if (document.documentElement.scrollTop > 0) {
+      setTimeout(() => {
+        document.documentElement.scrollTop = 0;
+      }, 100);
+    }
+    
+    // 3차 시도: document.body.scrollTop (일부 모바일 브라우저)
+    if (document.body.scrollTop > 0) {
+      setTimeout(() => {
+        document.body.scrollTop = 0;
+      }, 200);
+    }
+  };
+
+  // 링크 클릭 시 페이지 상단으로 스크롤 + 페이지 이동
+  const handleLinkClick = (href: string) => {
+    // 즉시 상단으로 스크롤
+    scrollToTop();
+    
+    // 페이지 이동 후에도 다시 스크롤 (안전장치)
+    setTimeout(() => {
+      scrollToTop();
+    }, 100);
+  };
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,6 +82,7 @@ export default function Footer() {
                   href="/services/ott-plus"
                   className="text-gray-300 hover:text-white transition-colors"
                   data-testid="link-ott-plus"
+                  onClick={() => handleLinkClick("/services/ott-plus")}
                 >
                   OTT PLUS
                 </Link>
@@ -56,6 +92,7 @@ export default function Footer() {
                   href="/services/streamplayer"
                   className="text-gray-300 hover:text-white transition-colors"
                   data-testid="link-streamplayer"
+                  onClick={() => handleLinkClick("/services/streamplayer")}
                 >
                   StreamPlayer
                 </Link>
@@ -65,6 +102,7 @@ export default function Footer() {
                   href="/services/netflix-account"
                   className="text-gray-300 hover:text-white transition-colors"
                   data-testid="link-netflix-account"
+                  onClick={() => handleLinkClick("/services/netflix-account")}
                 >
                   넷플릭스 계정 대행
                 </Link>
@@ -74,6 +112,7 @@ export default function Footer() {
                   href="/services/nohard-system"
                   className="text-gray-300 hover:text-white transition-colors"
                   data-testid="link-nohard-system"
+                  onClick={() => handleLinkClick("/services/nohard-system")}
                 >
                   노하드 시스템
                 </Link>
@@ -85,37 +124,39 @@ export default function Footer() {
             <h4 className="text-lg font-semibold mb-4">고객 지원</h4>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
+                <button
+                  onClick={() => scrollToTop()}
+                  className="text-gray-300 hover:text-white transition-colors text-left"
                   data-testid="link-faq"
                 >
                   FAQ
-                </a>
+                </button>
               </li>
               <li>
                 <Link
                   href="/downloads"
                   className="text-gray-300 hover:text-white transition-colors"
                   data-testid="link-downloads"
+                  onClick={() => handleLinkClick("/downloads")}
                 >
                   다운로드
                 </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
+                <button
+                  onClick={() => scrollToTop()}
+                  className="text-gray-300 hover:text-white transition-colors text-left"
                   data-testid="link-tech-support"
                 >
                   기술 지원
-                </a>
+                </button>
               </li>
               <li>
                 <Link
                   href="/contact"
                   className="text-gray-300 hover:text-white transition-colors"
                   data-testid="link-contact"
+                  onClick={() => handleLinkClick("/contact")}
                 >
                   문의하기
                 </Link>
