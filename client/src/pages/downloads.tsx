@@ -112,8 +112,14 @@ export default function Downloads() {
         downloadUrl = download.downloadUrl;
       }
       
-      // 새 탭에서 열어서 브라우저가 저장/열기 다이얼로그 표시하도록 함
-      window.open(downloadUrl, '_blank');
+      // 통일된 다운로드 방식 - 새창 없이 직접 다운로드 (원래 방식 복원)
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = download.fileName; // 이 속성이 다운로드 다이얼로그를 트리거
+      link.target = '_self'; // 현재 창에서 다운로드
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       // Google Drive 파일의 경우 추가 안내
       if (download.googleDriveFileId) {
