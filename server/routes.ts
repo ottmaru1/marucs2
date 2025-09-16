@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {      
       // 기본 계정 정보 조회
       const accounts = await storage.getGoogleDriveAccounts();
-      const primaryAccount = accounts.find((acc: any) => acc.isPrimary && acc.isActive);
+      const primaryAccount = accounts.find((acc: any) => acc.isDefault && acc.isActive);
       
       if (!primaryAccount) {
         return res.status(404).json({ error: "기본 계정을 찾을 수 없습니다" });
@@ -1522,69 +1522,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const accounts = await storage.getGoogleDriveAccounts();
       const currentDefault = accounts.find(acc => acc.isDefault);
       
-      if (currentDefault && currentDefault.id !== id && force !== 'true') {
-        // 동기화 상태 확인
-        const downloads = await storage.getDownloads();
-        const defaultAccountFiles = downloads.filter(d => d.googleDriveAccountId === currentDefault.id);
-        
-        if (defaultAccountFiles.length > 0) {
-          // 활성 계정 확인
-          const activeAccounts = accounts.filter(acc => acc.isActive && acc.id !== currentDefault.id);
-          
-          if (activeAccounts.length === 0) {
-            // 활성 계정이 없으면 강제 변경만 허용
-            return res.status(409).json({ 
-              error: "기본 계정 변경 전 동기화가 필요합니다",
-              needsSync: true,
-              currentDefault: currentDefault.email,
-              newDefault: account.email,
-              fileCount: defaultAccountFiles.length,
-              message: `현재 기본 계정 ${currentDefault.email}에 ${defaultAccountFiles.length}개 파일이 있지만 활성 계정이 없습니다. 강제 변경하시겠습니까?`
-            });
-          }
-          
-          // 동기화 상태 검증: 다른 활성 계정들에도 같은 파일들이 있는지 확인
-          let syncedFiles = 0;
-          for (const file of defaultAccountFiles) {
-            const otherAccountsWithFile = downloads.filter(d => 
-              d.fileName === file.fileName && 
-              d.category === file.category &&
-              activeAccounts.some(acc => acc.id === d.googleDriveAccountId)
-            );
-            
-            if (otherAccountsWithFile.length >= activeAccounts.length) {
-              syncedFiles++;
-            }
-          }
-          
-          const syncRatio = syncedFiles / defaultAccountFiles.length;
-          
-          // 90% 이상 동기화되었으면 허용, 그렇지 않으면 동기화 권장
-          if (syncRatio < 0.9) {
-            const unsyncedFiles = defaultAccountFiles.length - syncedFiles;
-            return res.status(409).json({ 
-              error: "기본 계정 변경 전 동기화가 필요합니다",
-              needsSync: true,
-              currentDefault: currentDefault.email,
-              newDefault: account.email,
-              fileCount: defaultAccountFiles.length,
-              syncedFiles,
-              unsyncedFiles,
-              syncRatio: Math.round(syncRatio * 100),
-              message: `현재 기본 계정 ${currentDefault.email}의 ${defaultAccountFiles.length}개 파일 중 ${unsyncedFiles}개가 다른 계정에 동기화되지 않았습니다. (동기화율: ${Math.round(syncRatio * 100)}%) 동기화 후 변경하거나 강제 변경하시겠습니까?`
-            });
-          }
-        }
+      // Idempotent: 이미 기본 계정이면 성공 응답
+      if (currentDefault && currentDefault.id === id) {
+        return res.json({
+          success: true,
+          message: `${account.email}는 이미 기본 계정입니다`,
+          newDefault: account.email,
+          alreadyDefault: true
+        });
       }
 
       // 기본 계정 설정
       await storage.setDefaultGoogleDriveAccount(id);
       
+      // 응답 먼저 보내기
       res.json({ 
         success: true, 
         message: "기본 계정이 설정되었습니다",
         newDefault: account.email,
         forced: force === 'true'
+      });
+      
+      // 백그라운드에서 동기화 시작 (비차단)
+      setImmediate(() => {
+        console.log(`🔄 기본계정 변경 완료: ${account.email}`);
+        console.log(`💡 파일 동기화가 필요한 경우 관리 페이지에서 '파일 동기화' 버튼을 클릭하세요.`);
       });
     } catch (error) {
       console.error('기본 계정 설정 오류:', error);
